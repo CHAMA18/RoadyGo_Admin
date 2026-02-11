@@ -1,0 +1,118 @@
+{
+  "project_info": {
+    "project_number": "31207707778",
+    "project_id": "remo-login",
+    "storage_bucket": "remo-login.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:31207707778:android:2eaa55375c640c2757909b",
+        "android_client_info": {
+          "package_name": "com.example.remologin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "31207707778-0jrhkkpfhsrter0ca8vqm3hlkhugu8r0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1xtYGRPgdi2lz_5kbbrlNuyRF4Kr19Jg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "31207707778-0jrhkkpfhsrter0ca8vqm3hlkhugu8r0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "31207707778-5kotv82o82jpnvtlhvljrbsuudrf3jef.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.atoz"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:31207707778:android:42636ca158448a3957909b",
+        "android_client_info": {
+          "package_name": "com.mycompany.atoz"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "31207707778-0jrhkkpfhsrter0ca8vqm3hlkhugu8r0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1xtYGRPgdi2lz_5kbbrlNuyRF4Kr19Jg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "31207707778-0jrhkkpfhsrter0ca8vqm3hlkhugu8r0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "31207707778-5kotv82o82jpnvtlhvljrbsuudrf3jef.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.atoz"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:31207707778:android:ce8f1eaca60f1efb57909b",
+        "android_client_info": {
+          "package_name": "com.roadygo.stackone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "31207707778-0jrhkkpfhsrter0ca8vqm3hlkhugu8r0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1xtYGRPgdi2lz_5kbbrlNuyRF4Kr19Jg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "31207707778-0jrhkkpfhsrter0ca8vqm3hlkhugu8r0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "31207707778-5kotv82o82jpnvtlhvljrbsuudrf3jef.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.atoz"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

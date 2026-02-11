@@ -1,0 +1,27 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "remo-login",
+          "appId": "1:31207707778:android:ce8f1eaca60f1efb57909b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "remo-login",
+          "configurations": {
+            "android": "1:31207707778:android:ce8f1eaca60f1efb57909b",
+            "ios": "1:31207707778:ios:dec9fe016edf321f57909b",
+            "web": "1:31207707778:web:65657a9d838e1b4c57909b"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
