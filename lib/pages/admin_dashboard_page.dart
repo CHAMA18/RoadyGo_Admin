@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:roadygo_admin/models/driver_model.dart';
 import 'package:roadygo_admin/nav.dart';
+import 'package:roadygo_admin/pages/regions_section.dart';
 import 'package:roadygo_admin/pages/rides_section.dart';
 import 'package:roadygo_admin/services/driver_service.dart';
 import 'package:roadygo_admin/theme.dart';
@@ -63,6 +64,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       // Content based on selected tab
                       if (_selectedTabIndex == 0)
                         RidesSection(isDark: isDark)
+                      else if (_selectedTabIndex == 1)
+                        RegionsSection(isDark: isDark)
                       else ...[
                         // Online Drivers section
                         Padding(

@@ -8,6 +8,7 @@ import 'package:roadygo_admin/services/ride_service.dart';
 import 'package:roadygo_admin/services/region_service.dart';
 import 'package:roadygo_admin/services/schedule_service.dart';
 import 'package:roadygo_admin/services/rate_service.dart';
+import 'package:roadygo_admin/services/theme_service.dart';
 import 'package:roadygo_admin/theme.dart';
 import 'package:roadygo_admin/nav.dart';
 
@@ -22,7 +23,23 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Initialize default data in Firestore if needed
+  await _initializeDefaultData();
+  
   runApp(const MyApp());
+}
+
+/// Initialize default regions and rates in Firestore if they don't exist
+Future<void> _initializeDefaultData() async {
+  final regionService = RegionService();
+  final rateService = RateService();
+  
+  // Initialize default regions with pricing
+  await regionService.initializeDefaultRegions();
+  
+  // Initialize default rates
+  await rateService.initializeDefaultRates();
 }
 
 class MyApp extends StatelessWidget {
@@ -38,14 +55,19 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RegionService()),
         ChangeNotifierProvider(create: (_) => ScheduleService()),
         ChangeNotifierProvider(create: (_) => RateService()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
-      child: MaterialApp.router(
-        title: 'RoadyGo Admin',
-        debugShowCheckedModeBanner: false,
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: AppRouter.router,
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, _) {
+          return MaterialApp.router(
+            title: 'RoadyGo Admin',
+            debugShowCheckedModeBanner: false,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            themeMode: themeService.themeMode,
+            routerConfig: AppRouter.router,
+          );
+        },
       ),
     );
   }

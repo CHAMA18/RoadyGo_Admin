@@ -310,13 +310,36 @@ class MaxiTaxiHeader extends StatelessWidget {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.35,
       child: Center(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            'assets/images/WhatsApp_Image_2026-02-04_at_00.58.08_4.jpeg',
-            height: 160,
-            fit: BoxFit.contain,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/images/WhatsApp_Image_2026-02-04_at_00.58.08_4.jpeg',
+                height: 160,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'Admin',
+                style: TextStyle(
+                  fontFamily: _fontFamily,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

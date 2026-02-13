@@ -1,4 +1,5 @@
 import 'package:roadygo_admin/models/driver_model.dart';
+import 'package:roadygo_admin/models/region_model.dart';
 import 'package:roadygo_admin/pages/admin_registration_page.dart';
 import 'package:roadygo_admin/pages/admin_dashboard_page.dart';
 import 'package:roadygo_admin/pages/driver_details_page.dart';
@@ -61,9 +62,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.editRegion,
         name: 'editRegion',
-        pageBuilder: (context, state) => const NoTransitionPage(
-          child: EditRegionPage(),
-        ),
+        pageBuilder: (context, state) {
+          final region = state.extra as RegionModel?;
+          return NoTransitionPage(
+            child: EditRegionPage(region: region),
+          );
+        },
       ),
     ],
   );

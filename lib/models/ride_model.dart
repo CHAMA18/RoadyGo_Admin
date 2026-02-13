@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Ride status enum
 enum RideStatus { pending, enRoute, arrived, completed, cancelled }
 
+/// Ride type enum - standard rider or corporate
+enum RideType { standard, corporate }
+
 /// Ride model for storing ride data in Firestore
 class RideModel {
   final String id;
@@ -18,6 +21,20 @@ class RideModel {
   final bool isDriverVerified;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // Region and pricing fields
+  final String? regionId;
+  final String? regionName;
+  final RideType rideType;
+  final double? distanceKm;
+  final int? durationMinutes;
+  
+  // Pricing snapshot at time of ride creation (from region)
+  final double? baseFare;
+  final double? costPerKm;
+  final double? costPerMin;
+  final double? floatPercent;
+  final double? estimatedFare;
 
   RideModel({
     required this.id,
@@ -33,6 +50,16 @@ class RideModel {
     this.isDriverVerified = true,
     required this.createdAt,
     required this.updatedAt,
+    this.regionId,
+    this.regionName,
+    this.rideType = RideType.standard,
+    this.distanceKm,
+    this.durationMinutes,
+    this.baseFare,
+    this.costPerKm,
+    this.costPerMin,
+    this.floatPercent,
+    this.estimatedFare,
   });
 
   bool get isPending => status == RideStatus.pending;
@@ -63,7 +90,7 @@ class RideModel {
       status: _parseStatus(json['status']),
       pickupLocation: json['pickupLocation'] ?? '',
       dropoffLocation: json['dropoffLocation'] ?? '',
-      fare: (json['fare'] ?? 0.0).toDouble(),
+      fare: json['fare'] != null ? (json['fare']).toDouble() : null,
       isDriverVerified: json['isDriverVerified'] ?? true,
       createdAt: json['createdAt'] is Timestamp
           ? (json['createdAt'] as Timestamp).toDate()
@@ -71,7 +98,26 @@ class RideModel {
       updatedAt: json['updatedAt'] is Timestamp
           ? (json['updatedAt'] as Timestamp).toDate()
           : DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
+      regionId: json['regionId'],
+      regionName: json['regionName'],
+      rideType: _parseRideType(json['rideType']),
+      distanceKm: json['distanceKm'] != null ? (json['distanceKm']).toDouble() : null,
+      durationMinutes: json['durationMinutes'],
+      baseFare: json['baseFare'] != null ? (json['baseFare']).toDouble() : null,
+      costPerKm: json['costPerKm'] != null ? (json['costPerKm']).toDouble() : null,
+      costPerMin: json['costPerMin'] != null ? (json['costPerMin']).toDouble() : null,
+      floatPercent: json['floatPercent'] != null ? (json['floatPercent']).toDouble() : null,
+      estimatedFare: json['estimatedFare'] != null ? (json['estimatedFare']).toDouble() : null,
     );
+  }
+
+  static RideType _parseRideType(String? type) {
+    switch (type?.toLowerCase()) {
+      case 'corporate':
+        return RideType.corporate;
+      default:
+        return RideType.standard;
+    }
   }
 
   static RideStatus _parseStatus(String? status) {
@@ -106,6 +152,16 @@ class RideModel {
       'isDriverVerified': isDriverVerified,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'regionId': regionId,
+      'regionName': regionName,
+      'rideType': rideType.name,
+      'distanceKm': distanceKm,
+      'durationMinutes': durationMinutes,
+      'baseFare': baseFare,
+      'costPerKm': costPerKm,
+      'costPerMin': costPerMin,
+      'floatPercent': floatPercent,
+      'estimatedFare': estimatedFare,
     };
   }
 
@@ -123,6 +179,16 @@ class RideModel {
     bool? isDriverVerified,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? regionId,
+    String? regionName,
+    RideType? rideType,
+    double? distanceKm,
+    int? durationMinutes,
+    double? baseFare,
+    double? costPerKm,
+    double? costPerMin,
+    double? floatPercent,
+    double? estimatedFare,
   }) {
     return RideModel(
       id: id ?? this.id,
@@ -138,6 +204,16 @@ class RideModel {
       isDriverVerified: isDriverVerified ?? this.isDriverVerified,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      regionId: regionId ?? this.regionId,
+      regionName: regionName ?? this.regionName,
+      rideType: rideType ?? this.rideType,
+      distanceKm: distanceKm ?? this.distanceKm,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      baseFare: baseFare ?? this.baseFare,
+      costPerKm: costPerKm ?? this.costPerKm,
+      costPerMin: costPerMin ?? this.costPerMin,
+      floatPercent: floatPercent ?? this.floatPercent,
+      estimatedFare: estimatedFare ?? this.estimatedFare,
     );
   }
 }

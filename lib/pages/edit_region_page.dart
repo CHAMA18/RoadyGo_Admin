@@ -187,17 +187,17 @@ class _EditRegionPageState extends State<EditRegionPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     
-    // Colors matching the HTML design
-    const primaryBlue = Color(0xFF60A5FA);
-    const accentRed = Color(0xFFF87171);
-    const limeGreen = Color(0xFFCCFF00);
-    final backgroundColor = isDark ? AppColors.darkBackground : const Color(0xFFF3F4F6);
-    final cardColor = isDark ? AppColors.darkBackgroundSecondary : Colors.white;
-    final borderColor = isDark ? AppColors.darkLine : const Color(0xFFE5E7EB);
-    final textColor = isDark ? AppColors.darkTextPrimary : const Color(0xFF333333);
-    final subtextColor = isDark ? AppColors.darkTextSecondary : const Color(0xFF6B7280);
-    final inputBgColor = isDark ? AppColors.darkBackground : const Color(0xFFF3F4F6);
+    // Colors matching the app theme
+    final primaryColor = colorScheme.primary;
+    final accentColor = colorScheme.secondary;
+    final backgroundColor = isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final cardColor = isDark ? AppColors.darkBackgroundSecondary : AppColors.lightBackgroundSecondary;
+    final borderColor = isDark ? AppColors.darkLine : AppColors.lightLine;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final subtextColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final inputBgColor = isDark ? AppColors.darkAlternate : AppColors.lightAlternate;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -211,13 +211,13 @@ class _EditRegionPageState extends State<EditRegionPage> {
               right: 16,
               bottom: 16,
             ),
-            decoration: const BoxDecoration(
-              color: primaryBlue,
+            decoration: BoxDecoration(
+              color: primaryColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black12,
+                  color: primaryColor.withValues(alpha: 0.3),
                   blurRadius: 8,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -298,7 +298,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                           _SectionHeader(
                             icon: Icons.public,
                             title: 'Standard Pricing',
-                            iconColor: primaryBlue,
+                            iconColor: primaryColor,
                             textColor: subtextColor,
                           ),
                           
@@ -364,10 +364,11 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   label: 'Float Percent',
                                   controller: _floatPercentController,
                                   inputBgColor: inputBgColor,
-                                  borderColor: accentRed.withValues(alpha: 0.5),
+                                  borderColor: accentColor.withValues(alpha: 0.5),
                                   textColor: textColor,
-                                  subtextColor: accentRed,
+                                  subtextColor: accentColor,
                                   isAccent: true,
+                                  accentColor: accentColor,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   suffix: '2/2',
                                 ),
@@ -381,7 +382,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                           _SectionHeader(
                             icon: Icons.business,
                             title: 'Corporate Pricing',
-                            iconColor: primaryBlue,
+                            iconColor: primaryColor,
                             textColor: subtextColor,
                           ),
                           
@@ -437,10 +438,11 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   label: 'Corporate Float Percent',
                                   controller: _corpFloatPercentController,
                                   inputBgColor: inputBgColor,
-                                  borderColor: accentRed.withValues(alpha: 0.5),
+                                  borderColor: accentColor.withValues(alpha: 0.5),
                                   textColor: textColor,
-                                  subtextColor: accentRed,
+                                  subtextColor: accentColor,
                                   isAccent: true,
+                                  accentColor: accentColor,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 ),
                               ],
@@ -460,28 +462,28 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: Color(0xFF333333),
+                                        color: Colors.white,
                                       ),
                                     )
-                                  : const Icon(Icons.save_outlined, color: Color(0xFF333333)),
+                                  : const Icon(Icons.save_outlined, color: Colors.white),
                               label: Text(
                                 _isSaving ? 'Saving...' : 'Save Changes',
                                 style: const TextStyle(
                                   fontFamily: _fontFamily,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF333333),
+                                  color: Colors.white,
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: limeGreen,
-                                foregroundColor: const Color(0xFF333333),
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 elevation: 4,
-                                shadowColor: limeGreen.withValues(alpha: 0.5),
+                                shadowColor: primaryColor.withValues(alpha: 0.5),
                               ),
                             ),
                           ),
@@ -545,6 +547,7 @@ class _FloatingLabelInput extends StatelessWidget {
   final Color textColor;
   final Color subtextColor;
   final bool isAccent;
+  final Color? accentColor;
   final TextInputType keyboardType;
   final String? suffix;
 
@@ -556,23 +559,24 @@ class _FloatingLabelInput extends StatelessWidget {
     required this.textColor,
     required this.subtextColor,
     this.isAccent = false,
+    this.accentColor,
     this.keyboardType = TextInputType.text,
     this.suffix,
   });
 
   @override
   Widget build(BuildContext context) {
-    const accentRed = Color(0xFFF87171);
+    final effectiveAccentColor = accentColor ?? AppColors.secondary;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Container(
           decoration: BoxDecoration(
-            color: isAccent ? accentRed.withValues(alpha: 0.05) : inputBgColor,
+            color: isAccent ? effectiveAccentColor.withValues(alpha: 0.05) : inputBgColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isAccent ? accentRed.withValues(alpha: 0.5) : borderColor,
+              color: isAccent ? effectiveAccentColor.withValues(alpha: 0.5) : borderColor,
               width: isAccent ? 2 : 1,
             ),
           ),
@@ -587,7 +591,7 @@ class _FloatingLabelInput extends StatelessWidget {
                     fontFamily: _fontFamily,
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: isAccent ? accentRed : subtextColor,
+                    color: isAccent ? effectiveAccentColor : subtextColor,
                     letterSpacing: 0.8,
                   ),
                 ),
@@ -601,9 +605,9 @@ class _FloatingLabelInput extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: textColor,
                 ),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 12, top: 4),
+                  contentPadding: EdgeInsets.only(left: 16, right: 16, bottom: 12, top: 4),
                   isDense: true,
                 ),
                 validator: (value) {
@@ -624,7 +628,7 @@ class _FloatingLabelInput extends StatelessWidget {
               fontFamily: _fontFamily,
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: accentRed,
+              color: effectiveAccentColor,
             ),
           ),
         ],
