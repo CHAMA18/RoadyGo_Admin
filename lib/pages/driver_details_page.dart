@@ -5,7 +5,6 @@ import 'package:roadygo_admin/models/driver_model.dart';
 import 'package:roadygo_admin/models/activity_model.dart';
 import 'package:roadygo_admin/pages/admin_dashboard_page.dart';
 import 'package:roadygo_admin/services/driver_service.dart';
-import 'package:roadygo_admin/theme.dart';
 
 const String _fontFamily = 'Satoshi';
 

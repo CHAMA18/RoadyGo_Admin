@@ -1,4 +1,4 @@
-package com.mycompany.CounterApp
+package com.example.remologin
 
 import io.flutter.embedding.android.FlutterActivity
 

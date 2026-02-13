@@ -7,7 +7,6 @@ import 'package:roadygo_admin/pages/login_page.dart';
 import 'package:roadygo_admin/pages/profile_settings_page.dart';
 import 'package:roadygo_admin/pages/edit_rates_page.dart';
 import 'package:roadygo_admin/pages/edit_region_page.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {

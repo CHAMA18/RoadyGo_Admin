@@ -603,7 +603,7 @@ class _RateFormDialogState extends State<_RateFormDialog> {
                     Switch(
                       value: _isActive,
                       onChanged: (value) => setState(() => _isActive = value),
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ],
                 ),
