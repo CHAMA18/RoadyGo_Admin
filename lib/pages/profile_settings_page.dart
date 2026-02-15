@@ -107,6 +107,16 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage>
                             subtitle: 'Appearance & display',
                             gradientColors: const [Color(0xFFF093FB), Color(0xFFF5576C)],
                             isExpandable: true,
+                            expandableType: 'theme',
+                            onTap: () {},
+                          ),
+                          _SettingItemData(
+                            icon: Icons.language_rounded,
+                            title: 'Language',
+                            subtitle: 'App language',
+                            gradientColors: const [Color(0xFF667EEA), Color(0xFF764BA2)],
+                            isExpandable: true,
+                            expandableType: 'language',
                             onTap: () {},
                           ),
                           _SettingItemData(
@@ -197,23 +207,11 @@ class _ProfileSliverAppBar extends StatelessWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // Gradient Background
+            // Solid background
             Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          AppColors.primary.withValues(alpha: 0.3),
-                          AppColors.darkBackgroundSecondary,
-                        ]
-                      : [
-                          AppColors.primary.withValues(alpha: 0.15),
-                          AppColors.lightBackgroundSecondary,
-                        ],
-                ),
-              ),
+              color: isDark
+                  ? AppColors.darkBackgroundSecondary
+                  : AppColors.primary.withValues(alpha: 0.08),
             ),
             
             // Decorative Circles
@@ -225,7 +223,7 @@ class _ProfileSliverAppBar extends StatelessWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -237,7 +235,7 @@ class _ProfileSliverAppBar extends StatelessWidget {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.secondary.withValues(alpha: 0.08),
+                  color: AppColors.primary.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -360,12 +358,7 @@ class _ProfileAvatarSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary.withValues(alpha: 0.15),
-                      AppColors.secondary.withValues(alpha: 0.15),
-                    ],
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: AppColors.primary.withValues(alpha: 0.3),
@@ -465,14 +458,8 @@ class _AnimatedAvatarState extends State<_AnimatedAvatar>
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: SweepGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.secondary,
-                      AppColors.primary.withValues(alpha: 0.3),
-                      AppColors.primary,
-                    ],
-                  ),
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  border: Border.all(color: AppColors.primary, width: 3),
                 ),
               ),
             );
@@ -513,11 +500,7 @@ class _AnimatedAvatarState extends State<_AnimatedAvatar>
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.primary, AppColors.secondary],
-                ),
+                color: AppColors.primary,
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: widget.isDark
@@ -556,14 +539,7 @@ class _AnimatedAvatarState extends State<_AnimatedAvatar>
         : 'A';
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary.withValues(alpha: 0.2),
-            AppColors.secondary.withValues(alpha: 0.2),
-          ],
-        ),
+        color: AppColors.primary.withValues(alpha: 0.12),
       ),
       child: Center(
         child: Text(
@@ -645,9 +621,11 @@ class _SettingsSection extends StatelessWidget {
                 
                 if (item.isExpandable) {
                   return _ExpandableSettingItem(
+                    key: ValueKey(item.expandableType),
                     data: item,
                     isDark: isDark,
                     showDivider: !isLast,
+                    expandableType: item.expandableType,
                   );
                 }
                 
@@ -673,6 +651,7 @@ class _SettingItemData {
   final List<Color> gradientColors;
   final VoidCallback onTap;
   final bool isExpandable;
+  final String expandableType;
 
   _SettingItemData({
     required this.icon,
@@ -681,6 +660,7 @@ class _SettingItemData {
     required this.gradientColors,
     required this.onTap,
     this.isExpandable = false,
+    this.expandableType = 'theme',
   });
 }
 
@@ -729,15 +709,11 @@ class _SettingItemState extends State<_SettingItem> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: widget.data.gradientColors,
-                    ),
+                    color: widget.data.gradientColors.first,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: widget.data.gradientColors[0].withValues(alpha: 0.3),
+                        color: widget.data.gradientColors.first.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -821,16 +797,19 @@ class _SettingItemState extends State<_SettingItem> {
   }
 }
 
-/// Expandable Setting Item for Theme
+/// Expandable Setting Item for Theme & Language
 class _ExpandableSettingItem extends StatefulWidget {
   final _SettingItemData data;
   final bool isDark;
   final bool showDivider;
+  final String expandableType;
 
   const _ExpandableSettingItem({
+    super.key,
     required this.data,
     required this.isDark,
     required this.showDivider,
+    required this.expandableType,
   });
 
   @override
@@ -874,10 +853,26 @@ class _ExpandableSettingItemState extends State<_ExpandableSettingItem>
     });
   }
 
+  String _getSubtitle(BuildContext context) {
+    if (widget.expandableType == 'theme') {
+      return context.watch<ThemeService>().themeModeDisplayName;
+    } else if (widget.expandableType == 'language') {
+      return context.watch<ThemeService>().languageDisplayName;
+    }
+    return widget.data.subtitle;
+  }
+
+  Widget _getExpandedPanel() {
+    if (widget.expandableType == 'theme') {
+      return _ThemeOptionsPanel(isDark: widget.isDark);
+    } else if (widget.expandableType == 'language') {
+      return _LanguageOptionsPanel(isDark: widget.isDark);
+    }
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final themeService = context.watch<ThemeService>();
-    
     return Column(
       children: [
         GestureDetector(
@@ -902,15 +897,11 @@ class _ExpandableSettingItemState extends State<_ExpandableSettingItem>
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: widget.data.gradientColors,
-                    ),
+                    color: widget.data.gradientColors.first,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: widget.data.gradientColors[0].withValues(alpha: 0.3),
+                        color: widget.data.gradientColors.first.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -943,7 +934,7 @@ class _ExpandableSettingItemState extends State<_ExpandableSettingItem>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        themeService.themeModeDisplayName,
+                        _getSubtitle(context),
                         style: TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 12,
@@ -983,10 +974,10 @@ class _ExpandableSettingItemState extends State<_ExpandableSettingItem>
           ),
         ),
         
-        // Expandable Theme Options
+        // Expandable Options Panel
         SizeTransition(
           sizeFactor: _expandAnimation,
-          child: _ThemeOptionsPanel(isDark: widget.isDark),
+          child: _getExpandedPanel(),
         ),
         
         if (widget.showDivider && !_isExpanded)
@@ -1054,6 +1045,238 @@ class _ThemeOptionsPanel extends StatelessWidget {
   }
 }
 
+/// Language Options Panel
+class _LanguageOptionsPanel extends StatelessWidget {
+  final bool isDark;
+
+  const _LanguageOptionsPanel({required this.isDark});
+
+  static const List<Map<String, String>> _languages = [
+    {'code': 'en', 'flag': '🇬🇧', 'label': 'English'},
+    {'code': 'sq', 'flag': '🇦🇱', 'label': 'Shqip'},
+    {'code': 'tr', 'flag': '🇹🇷', 'label': 'Türkçe'},
+    {'code': 'fr', 'flag': '🇫🇷', 'label': 'Français'},
+    {'code': 'de', 'flag': '🇩🇪', 'label': 'Deutsch'},
+    {'code': 'es', 'flag': '🇪🇸', 'label': 'Español'},
+    {'code': 'it', 'flag': '🇮🇹', 'label': 'Italiano'},
+    {'code': 'pt', 'flag': '🇵🇹', 'label': 'Português'},
+    {'code': 'nl', 'flag': '🇳🇱', 'label': 'Nederlands'},
+    {'code': 'pl', 'flag': '🇵🇱', 'label': 'Polski'},
+    {'code': 'ro', 'flag': '🇷🇴', 'label': 'Română'},
+    {'code': 'el', 'flag': '🇬🇷', 'label': 'Ελληνικά'},
+    {'code': 'cs', 'flag': '🇨🇿', 'label': 'Čeština'},
+    {'code': 'hu', 'flag': '🇭🇺', 'label': 'Magyar'},
+    {'code': 'sv', 'flag': '🇸🇪', 'label': 'Svenska'},
+    {'code': 'da', 'flag': '🇩🇰', 'label': 'Dansk'},
+    {'code': 'fi', 'flag': '🇫🇮', 'label': 'Suomi'},
+    {'code': 'no', 'flag': '🇳🇴', 'label': 'Norsk'},
+    {'code': 'bg', 'flag': '🇧🇬', 'label': 'Български'},
+    {'code': 'hr', 'flag': '🇭🇷', 'label': 'Hrvatski'},
+    {'code': 'sk', 'flag': '🇸🇰', 'label': 'Slovenčina'},
+    {'code': 'sl', 'flag': '🇸🇮', 'label': 'Slovenščina'},
+    {'code': 'sr', 'flag': '🇷🇸', 'label': 'Српски'},
+    {'code': 'uk', 'flag': '🇺🇦', 'label': 'Українська'},
+    {'code': 'ru', 'flag': '🇷🇺', 'label': 'Русский'},
+    {'code': 'lt', 'flag': '🇱🇹', 'label': 'Lietuvių'},
+    {'code': 'lv', 'flag': '🇱🇻', 'label': 'Latviešu'},
+    {'code': 'et', 'flag': '🇪🇪', 'label': 'Eesti'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final themeService = context.watch<ThemeService>();
+    
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.darkBackground.withValues(alpha: 0.5)
+            : AppColors.lightBackground.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 280),
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _languages.map((lang) {
+              final code = lang['code']!;
+              final flag = lang['flag']!;
+              final label = lang['label']!;
+              return _CompactLanguageButton(
+                flag: flag,
+                label: label,
+                isSelected: themeService.languageCode == code,
+                isDark: isDark,
+                onTap: () => themeService.setLanguage(code),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact Language Button for grid layout
+class _CompactLanguageButton extends StatelessWidget {
+  final String flag;
+  final String label;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _CompactLanguageButton({
+    required this.flag,
+    required this.label,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 100,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary
+              : (isDark
+                  ? AppColors.darkBackgroundSecondary.withValues(alpha: 0.5)
+                  : AppColors.lightBackgroundSecondary),
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: isDark
+                      ? AppColors.darkLine.withValues(alpha: 0.3)
+                      : AppColors.lightLine.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(flag, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: _fontFamily,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Language Option Button
+class _LanguageOptionButton extends StatelessWidget {
+  final String flag;
+  final String label;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _LanguageOptionButton({
+    required this.flag,
+    required this.label,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary
+                : (isDark
+                    ? AppColors.darkBackgroundSecondary.withValues(alpha: 0.5)
+                    : AppColors.lightBackgroundSecondary),
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? null
+                : Border.all(
+                    color: isDark
+                        ? AppColors.darkLine.withValues(alpha: 0.3)
+                        : AppColors.lightLine.withValues(alpha: 0.5),
+                    width: 1,
+                  ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            children: [
+              Text(
+                flag,
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: _fontFamily,
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Theme Option Button
 class _ThemeOptionButton extends StatelessWidget {
   final IconData icon;
@@ -1079,15 +1302,8 @@ class _ThemeOptionButton extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.secondary],
-                  )
-                : null,
             color: isSelected
-                ? null
+                ? AppColors.primary
                 : (isDark
                     ? AppColors.darkBackgroundSecondary.withValues(alpha: 0.5)
                     : AppColors.lightBackgroundSecondary),

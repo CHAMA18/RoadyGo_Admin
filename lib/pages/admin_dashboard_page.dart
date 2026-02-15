@@ -297,8 +297,15 @@ class DashboardHeader extends StatelessWidget {
 }
 
 /// Stats Section
-class StatsSection extends StatelessWidget {
+class StatsSection extends StatefulWidget {
   const StatsSection({super.key});
+
+  @override
+  State<StatsSection> createState() => _StatsSectionState();
+}
+
+class _StatsSectionState extends State<StatsSection> {
+  int? _previousCount;
 
   @override
   Widget build(BuildContext context) {
@@ -310,14 +317,29 @@ class StatsSection extends StatelessWidget {
         stream: context.read<DriverService>().watchActiveDriverCount(),
         builder: (context, snapshot) {
           final count = snapshot.data ?? 0;
-          // Calculate change percentage (mock for now, could be stored/computed)
-          final change = count > 0 ? '12%' : '0%';
+
+          String? change;
+          bool isChangePositive = true;
+
+          if (_previousCount != null && _previousCount != count) {
+            final diff = count - _previousCount!;
+            final base = _previousCount == 0 ? count : _previousCount!.abs();
+
+            if (base > 0) {
+              final percent = ((diff / base) * 100).round().abs();
+              change = '$percent%';
+              isChangePositive = diff >= 0;
+            }
+          }
+
+          _previousCount = count;
           
           return StatCard(
             icon: Icons.directions_car,
             label: 'Active Drivers',
             value: count.toString(),
             change: change,
+            isChangePositive: isChangePositive,
             isDark: isDark,
             isLoading: snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData,
           );
@@ -332,7 +354,8 @@ class StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final String change;
+  final String? change;
+  final bool isChangePositive;
   final bool isDark;
   final bool isLoading;
 
@@ -342,6 +365,7 @@ class StatCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.change,
+    this.isChangePositive = true,
     required this.isDark,
     this.isLoading = false,
   });
@@ -406,29 +430,35 @@ class StatCard extends StatelessWidget {
                         color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,
                       ),
                     ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: isDark ? 0.2 : 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.arrow_upward, color: Colors.green, size: 10),
-                    const SizedBox(width: 2),
-                    Text(
-                      change,
-                      style: TextStyle(
-                        fontFamily: _fontFamily,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green,
+              if (change != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (isChangePositive ? Colors.green : Colors.red)
+                        .withValues(alpha: isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isChangePositive ? Icons.arrow_upward : Icons.arrow_downward,
+                        color: isChangePositive ? Colors.green : Colors.red,
+                        size: 10,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 2),
+                      Text(
+                        change!,
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isChangePositive ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ],

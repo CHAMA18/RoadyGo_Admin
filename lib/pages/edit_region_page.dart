@@ -68,16 +68,16 @@ class _EditRegionPageState extends State<EditRegionPage> {
         _currentRegion = regionService.regions.first;
         _populateFields(_currentRegion!);
       } else {
-        // Set default values
-        _regionNameController.text = 'Default Region';
-        _costOfRideController.text = '5.00';
-        _costPerKmController.text = '1.20';
-        _costPerMinController.text = '0.30';
-        _floatPercentController.text = '15';
-        _corpCostOfRideController.text = '6.50';
-        _corpCostPerKmController.text = '1.45';
-        _corpCostPerMinController.text = '0.35';
-        _corpFloatPercentController.text = '20';
+        // Leave fields empty for new region creation
+        _regionNameController.clear();
+        _costOfRideController.clear();
+        _costPerKmController.clear();
+        _costPerMinController.clear();
+        _floatPercentController.clear();
+        _corpCostOfRideController.clear();
+        _corpCostPerKmController.clear();
+        _corpCostPerMinController.clear();
+        _corpFloatPercentController.clear();
       }
       setState(() => _isLoading = false);
     }
@@ -126,14 +126,14 @@ class _EditRegionPageState extends State<EditRegionPage> {
         activeDrivers: _currentRegion?.activeDrivers ?? 0,
         totalRides: _currentRegion?.totalRides ?? 0,
         isActive: true,
-        costOfRide: double.tryParse(_costOfRideController.text) ?? 5.00,
-        costPerKm: double.tryParse(_costPerKmController.text) ?? 1.20,
-        costPerMin: double.tryParse(_costPerMinController.text) ?? 0.30,
-        floatPercent: double.tryParse(_floatPercentController.text) ?? 15.0,
-        corpCostOfRide: double.tryParse(_corpCostOfRideController.text) ?? 6.50,
-        corpCostPerKm: double.tryParse(_corpCostPerKmController.text) ?? 1.45,
-        corpCostPerMin: double.tryParse(_corpCostPerMinController.text) ?? 0.35,
-        corpFloatPercent: double.tryParse(_corpFloatPercentController.text) ?? 20.0,
+        costOfRide: double.tryParse(_costOfRideController.text) ?? 0.0,
+        costPerKm: double.tryParse(_costPerKmController.text) ?? 0.0,
+        costPerMin: double.tryParse(_costPerMinController.text) ?? 0.0,
+        floatPercent: double.tryParse(_floatPercentController.text) ?? 0.0,
+        corpCostOfRide: double.tryParse(_corpCostOfRideController.text) ?? 0.0,
+        corpCostPerKm: double.tryParse(_corpCostPerKmController.text) ?? 0.0,
+        corpCostPerMin: double.tryParse(_corpCostPerMinController.text) ?? 0.0,
+        corpFloatPercent: double.tryParse(_corpFloatPercentController.text) ?? 0.0,
         createdAt: _currentRegion?.createdAt ?? now,
         updatedAt: now,
       );

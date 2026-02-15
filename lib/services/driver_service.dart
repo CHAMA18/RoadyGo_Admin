@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:roadygo_admin/models/driver_model.dart';
@@ -12,6 +14,7 @@ class DriverService extends ChangeNotifier {
   int _activeDriverCount = 0;
   bool _isLoading = false;
   String? _error;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _driversSub;
 
   List<DriverModel> get drivers => _drivers;
   List<DriverModel> get onlineDrivers => _onlineDrivers;
@@ -49,50 +52,39 @@ class DriverService extends ChangeNotifier {
     }
   }
 
-  /// Fetch online drivers only
+  /// Live stream of drivers to keep the dashboard in sync with Firestore
   Future<void> fetchOnlineDrivers() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
-    try {
-      final snapshot = await _firestore
-          .collection('drivers')
-          .where('isOnline', isEqualTo: true)
-          .limit(50)
-          .get();
+    await _driversSub?.cancel();
 
-      _onlineDrivers = snapshot.docs
-          .map((doc) => DriverModel.fromJson(doc.data(), doc.id))
-          .toList();
+    _driversSub = _firestore
+        .collection('drivers')
+        .orderBy('name')
+        .limit(100)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        final allDrivers = snapshot.docs
+            .map((doc) => DriverModel.fromJson(doc.data(), doc.id))
+            .toList();
 
-      // Also fetch drivers on break
-      final breakSnapshot = await _firestore
-          .collection('drivers')
-          .where('isOnBreak', isEqualTo: true)
-          .limit(20)
-          .get();
-
-      final onBreakDrivers = breakSnapshot.docs
-          .map((doc) => DriverModel.fromJson(doc.data(), doc.id))
-          .toList();
-
-      // Combine and remove duplicates
-      final allIds = _onlineDrivers.map((d) => d.id).toSet();
-      for (var driver in onBreakDrivers) {
-        if (!allIds.contains(driver.id)) {
-          _onlineDrivers.add(driver);
-        }
-      }
-
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      _error = 'Failed to fetch online drivers: $e';
-      _isLoading = false;
-      notifyListeners();
-      debugPrint('Error fetching online drivers: $e');
-    }
+        _drivers = allDrivers;
+        _onlineDrivers =
+            allDrivers.where((d) => d.isOnline || d.isOnBreak).toList();
+        _activeDriverCount = allDrivers.where((d) => d.isOnline).length;
+        _isLoading = false;
+        notifyListeners();
+      },
+      onError: (e) {
+        _error = 'Failed to fetch online drivers: $e';
+        _isLoading = false;
+        notifyListeners();
+        debugPrint('Error streaming online drivers: $e');
+      },
+    );
   }
 
   /// Stream of active driver count
@@ -171,7 +163,6 @@ class DriverService extends ChangeNotifier {
       if (isOnBreak != null) updates['isOnBreak'] = isOnBreak;
 
       await _firestore.collection('drivers').doc(driverId).update(updates);
-      await fetchOnlineDrivers();
       return true;
     } catch (e) {
       debugPrint('Error updating driver status: $e');
@@ -211,5 +202,11 @@ class DriverService extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _driversSub?.cancel();
+    super.dispose();
   }
 }

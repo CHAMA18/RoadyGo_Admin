@@ -23,23 +23,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
-  // Initialize default data in Firestore if needed
-  await _initializeDefaultData();
-  
   runApp(const MyApp());
-}
-
-/// Initialize default regions and rates in Firestore if they don't exist
-Future<void> _initializeDefaultData() async {
-  final regionService = RegionService();
-  final rateService = RateService();
-  
-  // Initialize default regions with pricing
-  await regionService.initializeDefaultRegions();
-  
-  // Initialize default rates
-  await rateService.initializeDefaultRates();
 }
 
 class MyApp extends StatelessWidget {
