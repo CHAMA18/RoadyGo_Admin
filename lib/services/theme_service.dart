@@ -5,14 +5,80 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ThemeService extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
   static const String _languageKey = 'language_code';
-  
+
   ThemeMode _themeMode = ThemeMode.system;
   String _languageCode = 'en';
   bool _isInitialized = false;
 
+  static const List<String> supportedLanguageCodes = [
+    'en',
+    'sq',
+    'mk',
+    'tr',
+    'fr',
+    'de',
+    'es',
+    'it',
+    'pt',
+    'nl',
+    'pl',
+    'ro',
+    'el',
+    'cs',
+    'hu',
+    'sv',
+    'da',
+    'fi',
+    'no',
+    'bg',
+    'hr',
+    'sk',
+    'sl',
+    'sr',
+    'uk',
+    'ru',
+    'lt',
+    'lv',
+    'et',
+  ];
+  static const Map<String, String> supportedLanguageNames = {
+    'en': 'English',
+    'sq': 'Albanian (Shqip)',
+    'mk': 'Македонски',
+    'tr': 'Türkçe',
+    'fr': 'Français',
+    'de': 'Deutsch',
+    'es': 'Español',
+    'it': 'Italiano',
+    'pt': 'Português',
+    'nl': 'Nederlands',
+    'pl': 'Polski',
+    'ro': 'Română',
+    'el': 'Ελληνικά',
+    'cs': 'Čeština',
+    'hu': 'Magyar',
+    'sv': 'Svenska',
+    'da': 'Dansk',
+    'fi': 'Suomi',
+    'no': 'Norsk',
+    'bg': 'Български',
+    'hr': 'Hrvatski',
+    'sk': 'Slovenčina',
+    'sl': 'Slovenščina',
+    'sr': 'Српски',
+    'uk': 'Українська',
+    'ru': 'Русский',
+    'lt': 'Lietuvių',
+    'lv': 'Latviešu',
+    'et': 'Eesti',
+  };
+
   ThemeMode get themeMode => _themeMode;
   String get languageCode => _languageCode;
   bool get isInitialized => _isInitialized;
+  Locale get currentLocale => Locale(_languageCode);
+  List<Locale> get supportedLocales =>
+      supportedLanguageCodes.map((code) => Locale(code)).toList();
 
   ThemeService() {
     _loadSettings();
@@ -21,7 +87,7 @@ class ThemeService extends ChangeNotifier {
   Future<void> _loadSettings() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Load theme mode
       final savedMode = prefs.getString(_themeModeKey);
       if (savedMode != null) {
@@ -30,10 +96,11 @@ class ThemeService extends ChangeNotifier {
           orElse: () => ThemeMode.system,
         );
       }
-      
+
       // Load language
       final savedLanguage = prefs.getString(_languageKey);
-      if (savedLanguage != null) {
+      if (savedLanguage != null &&
+          supportedLanguageCodes.contains(savedLanguage)) {
         _languageCode = savedLanguage;
       }
     } catch (e) {
@@ -46,7 +113,7 @@ class ThemeService extends ChangeNotifier {
 
   Future<void> setThemeMode(ThemeMode mode) async {
     if (_themeMode == mode) return;
-    
+
     _themeMode = mode;
     notifyListeners();
 
@@ -59,8 +126,8 @@ class ThemeService extends ChangeNotifier {
   }
 
   Future<void> setLanguage(String code) async {
-    if (_languageCode == code) return;
-    
+    if (!supportedLanguageCodes.contains(code) || _languageCode == code) return;
+
     _languageCode = code;
     notifyListeners();
 
@@ -86,36 +153,6 @@ class ThemeService extends ChangeNotifier {
 
   /// Returns the display name for the current language
   String get languageDisplayName {
-    const languageNames = {
-      'en': 'English',
-      'fr': 'Français',
-      'es': 'Español',
-      'de': 'Deutsch',
-      'pt': 'Português',
-      'it': 'Italiano',
-      'nl': 'Nederlands',
-      'pl': 'Polski',
-      'ro': 'Română',
-      'el': 'Ελληνικά',
-      'cs': 'Čeština',
-      'hu': 'Magyar',
-      'sv': 'Svenska',
-      'bg': 'Български',
-      'hr': 'Hrvatski',
-      'sk': 'Slovenčina',
-      'da': 'Dansk',
-      'fi': 'Suomi',
-      'no': 'Norsk',
-      'uk': 'Українська',
-      'sr': 'Српски',
-      'sl': 'Slovenščina',
-      'lt': 'Lietuvių',
-      'lv': 'Latviešu',
-      'et': 'Eesti',
-      'sq': 'Shqip',
-      'tr': 'Türkçe',
-      'ru': 'Русский',
-    };
-    return languageNames[_languageCode] ?? 'English';
+    return supportedLanguageNames[_languageCode] ?? 'English';
   }
 }

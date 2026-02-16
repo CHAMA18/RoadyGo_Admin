@@ -1,7 +1,11 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:roadygo_admin/firebase_options.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/services/auth_service.dart';
 import 'package:roadygo_admin/services/driver_service.dart';
 import 'package:roadygo_admin/services/ride_service.dart';
@@ -20,10 +24,34 @@ import 'package:roadygo_admin/nav.dart';
 /// - Material 3 theming with light/dark modes
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _configureGlobalErrorHandling();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MyApp());
+}
+
+void _configureGlobalErrorHandling() {
+  bool isKnownWebWindowAssertion(Object error) {
+    final message = error.toString();
+    return message.contains('_engine/engine/window.dart:99:12');
+  }
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    if (isKnownWebWindowAssertion(details.exception)) {
+      debugPrint('Suppressed known Flutter Web window assertion.');
+      return;
+    }
+    FlutterError.presentError(details);
+  };
+
+  ui.PlatformDispatcher.instance.onError = (error, stack) {
+    if (isKnownWebWindowAssertion(error)) {
+      debugPrint('Suppressed known Flutter Web window assertion (platform dispatcher).');
+      return true;
+    }
+    return false;
+  };
 }
 
 class MyApp extends StatelessWidget {
@@ -49,6 +77,14 @@ class MyApp extends StatelessWidget {
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: themeService.themeMode,
+            locale: themeService.currentLocale,
+            supportedLocales: themeService.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
             routerConfig: AppRouter.router,
           );
         },

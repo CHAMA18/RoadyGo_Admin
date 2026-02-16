@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/models/driver_model.dart';
 import 'package:roadygo_admin/nav.dart';
 import 'package:roadygo_admin/pages/regions_section.dart';
 import 'package:roadygo_admin/pages/rides_section.dart';
+import 'package:roadygo_admin/services/auth_service.dart';
 import 'package:roadygo_admin/services/driver_service.dart';
+import 'package:roadygo_admin/services/ride_service.dart';
 import 'package:roadygo_admin/theme.dart';
 
 const String _fontFamily = 'Satoshi';
@@ -21,163 +25,189 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _selectedTabIndex = 0;
 
-  final List<String> _tabs = ['Riders', 'Regions', 'Admins', 'Schedules'];
+  final List<String> _tabs = [
+    'Riders',
+    'Regions',
+    'Commission',
+    'Admins',
+    'Schedules',
+  ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DriverService>().fetchOnlineDrivers();
+      if (context.read<AuthService>().isAuthenticated) {
+        context.read<DriverService>().fetchOnlineDrivers();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? DashboardColors.backgroundDark : DashboardColors.backgroundLight,
+      backgroundColor: isDark
+          ? DashboardColors.backgroundDark
+          : DashboardColors.backgroundLight,
       body: Column(
         children: [
           // Header
           DashboardHeader(isDark: isDark),
-          
+
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Stats cards
-                      const StatsSection(),
-                      const SizedBox(height: 16),
-                      
-                      // Tab buttons
-                      TabButtonsSection(
-                        tabs: _tabs,
-                        selectedIndex: _selectedTabIndex,
-                        onTabSelected: (index) => setState(() => _selectedTabIndex = index),
-                        isDark: isDark,
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Content based on selected tab
-                      if (_selectedTabIndex == 0)
-                        RidesSection(isDark: isDark)
-                      else if (_selectedTabIndex == 1)
-                        RegionsSection(isDark: isDark)
-                      else ...[
-                        // Online Drivers section
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Online Drivers',
-                                style: TextStyle(
-                                  fontFamily: _fontFamily,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  'See All',
-                                  style: TextStyle(
-                                    fontFamily: _fontFamily,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: DashboardColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        
-                        // Driver cards from Firestore
-                        Consumer<DriverService>(
-                          builder: (context, driverService, _) {
-                            if (driverService.isLoading) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(32),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Stats cards
+                  const StatsSection(),
+                  const SizedBox(height: 16),
 
-                            if (driverService.error != null) {
-                              return Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Failed to load drivers',
-                                      style: TextStyle(
-                                        color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ElevatedButton(
-                                      onPressed: () => driverService.fetchOnlineDrivers(),
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-
-                            final drivers = driverService.onlineDrivers;
-
-                            if (drivers.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.all(32),
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      Icon(
-                                        Icons.person_off_outlined,
-                                        size: 48,
-                                        color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No drivers online',
-                                        style: TextStyle(
-                                          fontFamily: _fontFamily,
-                                          fontSize: 16,
-                                          color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
-                              child: Column(
-                                children: drivers.map((driver) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: DriverCard(driver: driver, isDark: isDark),
-                                )).toList(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ],
+                  // Tab buttons
+                  TabButtonsSection(
+                    tabs: _tabs,
+                    selectedIndex: _selectedTabIndex,
+                    onTabSelected: (index) =>
+                        setState(() => _selectedTabIndex = index),
+                    isDark: isDark,
                   ),
-                ),
+                  const SizedBox(height: 16),
+
+                  // Content based on selected tab
+                  if (_selectedTabIndex == 0)
+                    RidesSection(isDark: isDark)
+                  else if (_selectedTabIndex == 1)
+                    RegionsSection(isDark: isDark)
+                  else if (_selectedTabIndex == 2)
+                    CommissionSection(isDark: isDark)
+                  else ...[
+                    // Online Drivers section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            context.tr('Online Drivers'),
+                            style: TextStyle(
+                              fontFamily: _fontFamily,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? DashboardColors.textMainDark
+                                  : DashboardColors.textMainLight,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {},
+                            child: Text(
+                              context.tr('See All'),
+                              style: TextStyle(
+                                fontFamily: _fontFamily,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: DashboardColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Driver cards from Firestore
+                    Consumer<DriverService>(
+                      builder: (context, driverService, _) {
+                        if (driverService.isLoading) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(32),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+
+                        if (driverService.error != null) {
+                          return Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              children: [
+                                Text(
+                                  context.tr('Failed to load drivers'),
+                                  style: TextStyle(
+                                    color: isDark
+                                        ? DashboardColors.textMutedDark
+                                        : DashboardColors.textMutedLight,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () =>
+                                      driverService.fetchOnlineDrivers(),
+                                  child: Text(context.tr('Retry')),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final drivers = driverService.onlineDrivers;
+
+                        if (drivers.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.person_off_outlined,
+                                    size: 48,
+                                    color: isDark
+                                        ? DashboardColors.textMutedDark
+                                        : DashboardColors.textMutedLight,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    context.tr('No drivers online'),
+                                    style: TextStyle(
+                                      fontFamily: _fontFamily,
+                                      fontSize: 16,
+                                      color: isDark
+                                          ? DashboardColors.textMutedDark
+                                          : DashboardColors.textMutedLight,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            children: drivers
+                                .map((driver) => Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 16),
+                                      child: DriverCard(
+                                          driver: driver, isDark: isDark),
+                                    ))
+                                .toList(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
+        ],
+      ),
     );
   }
 }
@@ -214,7 +244,10 @@ class DashboardHeader extends StatelessWidget {
         bottom: 16,
       ),
       decoration: BoxDecoration(
-        color: (isDark ? DashboardColors.backgroundDark : DashboardColors.backgroundLight).withValues(alpha: 0.9),
+        color: (isDark
+                ? DashboardColors.backgroundDark
+                : DashboardColors.backgroundLight)
+            .withValues(alpha: 0.9),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -228,7 +261,9 @@ class DashboardHeader extends StatelessWidget {
                   fontFamily: _fontFamily,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,
+                  color: isDark
+                      ? DashboardColors.textMainDark
+                      : DashboardColors.textMainLight,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -238,7 +273,9 @@ class DashboardHeader extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: _fontFamily,
                   fontSize: 14,
-                  color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
+                  color: isDark
+                      ? DashboardColors.textMutedDark
+                      : DashboardColors.textMutedLight,
                 ),
               ),
             ],
@@ -252,7 +289,8 @@ class DashboardHeader extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: DashboardColors.primary, width: 2),
+                    border:
+                        Border.all(color: DashboardColors.primary, width: 2),
                     boxShadow: [
                       BoxShadow(
                         color: DashboardColors.primary.withValues(alpha: 0.3),
@@ -266,7 +304,8 @@ class DashboardHeader extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         color: DashboardColors.primary.withValues(alpha: 0.2),
-                        child: const Icon(Icons.person, color: DashboardColors.primary),
+                        child: const Icon(Icons.person,
+                            color: DashboardColors.primary),
                       ),
                     ),
                   ),
@@ -281,7 +320,9 @@ class DashboardHeader extends StatelessWidget {
                       color: Colors.red,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? DashboardColors.backgroundDark : DashboardColors.backgroundLight,
+                        color: isDark
+                            ? DashboardColors.backgroundDark
+                            : DashboardColors.backgroundLight,
                         width: 2,
                       ),
                     ),
@@ -306,44 +347,92 @@ class StatsSection extends StatefulWidget {
 
 class _StatsSectionState extends State<StatsSection> {
   int? _previousCount;
+  double? _previousCommission;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: StreamBuilder<int>(
-        stream: context.read<DriverService>().watchActiveDriverCount(),
-        builder: (context, snapshot) {
-          final count = snapshot.data ?? 0;
+      child: Row(
+        children: [
+          Expanded(
+            child: StreamBuilder<int>(
+              stream: context.read<DriverService>().watchActiveDriverCount(),
+              builder: (context, snapshot) {
+                final count = snapshot.data ?? 0;
 
-          String? change;
-          bool isChangePositive = true;
+                String? change;
+                bool isChangePositive = true;
 
-          if (_previousCount != null && _previousCount != count) {
-            final diff = count - _previousCount!;
-            final base = _previousCount == 0 ? count : _previousCount!.abs();
+                if (_previousCount != null && _previousCount != count) {
+                  final diff = count - _previousCount!;
+                  final base =
+                      _previousCount == 0 ? count : _previousCount!.abs();
 
-            if (base > 0) {
-              final percent = ((diff / base) * 100).round().abs();
-              change = '$percent%';
-              isChangePositive = diff >= 0;
-            }
-          }
+                  if (base > 0) {
+                    final percent = ((diff / base) * 100).round().abs();
+                    change = '$percent%';
+                    isChangePositive = diff >= 0;
+                  }
+                }
 
-          _previousCount = count;
-          
-          return StatCard(
-            icon: Icons.directions_car,
-            label: 'Active Drivers',
-            value: count.toString(),
-            change: change,
-            isChangePositive: isChangePositive,
-            isDark: isDark,
-            isLoading: snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData,
-          );
-        },
+                _previousCount = count;
+
+                return StatCard(
+                  icon: Icons.directions_car,
+                  label: 'Active Drivers',
+                  value: count.toString(),
+                  change: change,
+                  isChangePositive: isChangePositive,
+                  isDark: isDark,
+                  isLoading:
+                      snapshot.connectionState == ConnectionState.waiting &&
+                          !snapshot.hasData,
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: StreamBuilder<CommissionSummary>(
+              stream: context.read<RideService>().watchCommissionSummary(),
+              builder: (context, snapshot) {
+                final summary = snapshot.data;
+                final commission = summary?.platformCommission ?? 0.0;
+
+                String? change;
+                bool isChangePositive = true;
+                if (_previousCommission != null &&
+                    _previousCommission != commission) {
+                  final diff = commission - _previousCommission!;
+                  final base = _previousCommission == 0
+                      ? commission
+                      : _previousCommission!.abs();
+                  if (base > 0) {
+                    final percent = ((diff / base) * 100).round().abs();
+                    change = '$percent%';
+                    isChangePositive = diff >= 0;
+                  }
+                }
+                _previousCommission = commission;
+
+                return StatCard(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'Commission',
+                  value: '\$${commission.toStringAsFixed(2)}',
+                  change: change,
+                  isChangePositive: isChangePositive,
+                  isDark: isDark,
+                  isLoading:
+                      snapshot.connectionState == ConnectionState.waiting &&
+                          !snapshot.hasData,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -375,10 +464,12 @@ class StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? DashboardColors.surfaceDark : DashboardColors.surfaceLight,
+        color:
+            isDark ? DashboardColors.surfaceDark : DashboardColors.surfaceLight,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? DashboardColors.borderDark : DashboardColors.borderLight,
+          color:
+              isDark ? DashboardColors.borderDark : DashboardColors.borderLight,
         ),
         boxShadow: [
           BoxShadow(
@@ -402,7 +493,9 @@ class StatCard extends StatelessWidget {
                     fontFamily: _fontFamily,
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
+                    color: isDark
+                        ? DashboardColors.textMutedDark
+                        : DashboardColors.textMutedLight,
                     letterSpacing: 0.5,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -427,12 +520,15 @@ class StatCard extends StatelessWidget {
                         fontFamily: _fontFamily,
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,
+                        color: isDark
+                            ? DashboardColors.textMainDark
+                            : DashboardColors.textMainLight,
                       ),
                     ),
               if (change != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: (isChangePositive ? Colors.green : Colors.red)
                         .withValues(alpha: isDark ? 0.2 : 0.1),
@@ -442,7 +538,9 @@ class StatCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isChangePositive ? Icons.arrow_upward : Icons.arrow_downward,
+                        isChangePositive
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
                         color: isChangePositive ? Colors.green : Colors.red,
                         size: 10,
                       ),
@@ -498,20 +596,25 @@ class TabButtonsSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected 
-                    ? DashboardColors.primary 
-                    : (isDark ? DashboardColors.surfaceDark : DashboardColors.surfaceLight),
+                color: isSelected
+                    ? DashboardColors.primary
+                    : (isDark
+                        ? DashboardColors.surfaceDark
+                        : DashboardColors.surfaceLight),
                 borderRadius: BorderRadius.circular(16),
-                border: isSelected 
-                    ? null 
-                    : Border.all(color: isDark ? DashboardColors.borderDark : DashboardColors.borderLight),
-                boxShadow: isSelected 
+                border: isSelected
+                    ? null
+                    : Border.all(
+                        color: isDark
+                            ? DashboardColors.borderDark
+                            : DashboardColors.borderLight),
+                boxShadow: isSelected
                     ? [
                         BoxShadow(
                           color: DashboardColors.primary.withValues(alpha: 0.3),
                           blurRadius: 15,
                         ),
-                      ] 
+                      ]
                     : null,
               ),
               child: Text(
@@ -520,14 +623,218 @@ class TabButtonsSection extends StatelessWidget {
                   fontFamily: _fontFamily,
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
-                  color: isSelected 
-                      ? Colors.white 
-                      : (isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight),
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? DashboardColors.textMutedDark
+                          : DashboardColors.textMutedLight),
                 ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class CommissionSection extends StatefulWidget {
+  final bool isDark;
+
+  const CommissionSection({super.key, required this.isDark});
+
+  @override
+  State<CommissionSection> createState() => _CommissionSectionState();
+}
+
+class _CommissionSectionState extends State<CommissionSection> {
+  int _selectedChip = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Commission',
+            style: TextStyle(
+              fontFamily: _fontFamily,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: widget.isDark
+                  ? DashboardColors.textMainDark
+                  : DashboardColors.textMainLight,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            children: [
+              ChoiceChip(
+                label: const Text('Overview'),
+                selected: _selectedChip == 0,
+                onSelected: (_) => setState(() => _selectedChip = 0),
+              ),
+              ChoiceChip(
+                label: const Text('By Driver'),
+                selected: _selectedChip == 1,
+                onSelected: (_) => setState(() => _selectedChip = 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          StreamBuilder<CommissionSummary>(
+            stream: context.read<RideService>().watchCommissionSummary(),
+            builder: (context, snapshot) {
+              final summary = snapshot.data;
+              final total = summary?.platformCommission ?? 0.0;
+              final rides = summary?.completedRides ?? 0;
+              final drivers = summary?.activeDriversWithCommission ?? 0;
+
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: widget.isDark
+                      ? DashboardColors.surfaceDark
+                      : DashboardColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: widget.isDark
+                        ? DashboardColors.borderDark
+                        : DashboardColors.borderLight,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Platform Commission Earned',
+                      style: TextStyle(
+                        fontFamily: _fontFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: widget.isDark
+                            ? DashboardColors.textMutedDark
+                            : DashboardColors.textMutedLight,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '\$${total.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontFamily: _fontFamily,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: DashboardColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '$rides completed rides • $drivers drivers',
+                      style: TextStyle(
+                        fontFamily: _fontFamily,
+                        fontSize: 12,
+                        color: widget.isDark
+                            ? DashboardColors.textMutedDark
+                            : DashboardColors.textMutedLight,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          if (_selectedChip == 1)
+            StreamBuilder<List<DriverCommissionSummary>>(
+              stream:
+                  context.read<RideService>().watchDriverCommissionBreakdown(),
+              builder: (context, snapshot) {
+                final items =
+                    snapshot.data ?? const <DriverCommissionSummary>[];
+                if (items.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      'No completed rides for commission breakdown yet.',
+                      style: TextStyle(
+                        fontFamily: _fontFamily,
+                        fontSize: 13,
+                        color: widget.isDark
+                            ? DashboardColors.textMutedDark
+                            : DashboardColors.textMutedLight,
+                      ),
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: items.map((item) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: widget.isDark
+                            ? DashboardColors.surfaceDark
+                            : DashboardColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: widget.isDark
+                              ? DashboardColors.borderDark
+                              : DashboardColors.borderLight,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.driverName,
+                                  style: TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.isDark
+                                        ? DashboardColors.textMainDark
+                                        : DashboardColors.textMainLight,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${item.completedRides} completed rides',
+                                  style: TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 12,
+                                    color: widget.isDark
+                                        ? DashboardColors.textMutedDark
+                                        : DashboardColors.textMutedLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '\$${item.commission.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontFamily: _fontFamily,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: DashboardColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+        ],
       ),
     );
   }
@@ -553,189 +860,217 @@ class DriverCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => _navigateToDetails(context),
       child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? DashboardColors.surfaceDark : DashboardColors.surfaceLight,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark ? DashboardColors.borderDark : DashboardColors.borderLight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark
+              ? DashboardColors.surfaceDark
+              : DashboardColors.surfaceLight,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark
+                ? DashboardColors.borderDark
+                : DashboardColors.borderLight,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Driver image with status
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      driver.photoUrl,
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Driver image with status
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        driver.photoUrl,
                         width: 56,
                         height: 56,
-                        decoration: BoxDecoration(
-                          color: DashboardColors.primary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color:
+                                DashboardColors.primary.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.person,
+                              color: DashboardColors.primary),
                         ),
-                        child: const Icon(Icons.person, color: DashboardColors.primary),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: -2,
-                    right: -2,
-                    child: driver.isOnline 
-                        ? const PulsingIndicator()
-                        : Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: driver.isOnBreak ? Colors.amber : Colors.grey,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isDark ? DashboardColors.surfaceDark : DashboardColors.surfaceLight,
-                                width: 2,
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: driver.isOnline
+                          ? const PulsingIndicator()
+                          : Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: driver.isOnBreak
+                                    ? Colors.amber
+                                    : Colors.grey,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isDark
+                                      ? DashboardColors.surfaceDark
+                                      : DashboardColors.surfaceLight,
+                                  width: 2,
+                                ),
                               ),
                             ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+
+                // Driver info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        driver.name,
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? DashboardColors.textMainDark
+                              : DashboardColors.textMainLight,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        driver.vehicleDisplay,
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 12,
+                          color: isDark
+                              ? DashboardColors.textMutedDark
+                              : DashboardColors.textMutedLight,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            driver.rating.toString(),
+                            style: TextStyle(
+                              fontFamily: _fontFamily,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isDark
+                                  ? DashboardColors.textMainDark
+                                  : DashboardColors.textMainLight,
+                            ),
                           ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '(${driver.formattedRides} rides)',
+                            style: TextStyle(
+                              fontFamily: _fontFamily,
+                              fontSize: 10,
+                              color: isDark
+                                  ? DashboardColors.textMutedDark
+                                  : DashboardColors.textMutedLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              
-              // Driver info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      driver.name,
-                      style: TextStyle(
-                        fontFamily: _fontFamily,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      driver.vehicleDisplay,
-                      style: TextStyle(
-                        fontFamily: _fontFamily,
-                        fontSize: 12,
-                        color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          driver.rating.toString(),
-                          style: TextStyle(
-                            fontFamily: _fontFamily,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '(${driver.formattedRides} rides)',
-                          style: TextStyle(
-                            fontFamily: _fontFamily,
-                            fontSize: 10,
-                            color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
-              ),
-              
-              // Chevron button
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF374151) : const Color(0xFFF9FAFB),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: isDark ? const Color(0xFF6B7280) : const Color(0xFF9CA3AF),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Divider and location
-          Container(
-            padding: const EdgeInsets.only(top: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? DashboardColors.borderDark : DashboardColors.borderLight,
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      driver.isOnBreak ? Icons.schedule : Icons.location_on,
-                      size: 14,
-                      color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      driver.isOnBreak ? 'On Break' : driver.location,
-                      style: TextStyle(
-                        fontFamily: _fontFamily,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? DashboardColors.textMutedDark : DashboardColors.textMutedLight,
-                      ),
-                    ),
-                  ],
-                ),
-                GestureDetector(
-                  onTap: () => _navigateToDetails(context),
-                  child: Text(
-                    'View Details',
-                    style: TextStyle(
-                      fontFamily: _fontFamily,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: DashboardColors.primary,
-                    ),
+
+                // Chevron button
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF374151)
+                        : const Color(0xFFF9FAFB),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: isDark
+                        ? const Color(0xFF6B7280)
+                        : const Color(0xFF9CA3AF),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+
+            // Divider and location
+            Container(
+              padding: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? DashboardColors.borderDark
+                        : DashboardColors.borderLight,
+                  ),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        driver.isOnBreak ? Icons.schedule : Icons.location_on,
+                        size: 14,
+                        color: isDark
+                            ? DashboardColors.textMutedDark
+                            : DashboardColors.textMutedLight,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        driver.isOnBreak ? 'On Break' : driver.location,
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? DashboardColors.textMutedDark
+                              : DashboardColors.textMutedLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () => _navigateToDetails(context),
+                    child: Text(
+                      'View Details',
+                      style: TextStyle(
+                        fontFamily: _fontFamily,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: DashboardColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -750,35 +1085,51 @@ class PulsingIndicator extends StatefulWidget {
 
 class _PulsingIndicatorState extends State<PulsingIndicator>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+  AnimationController? _controller;
+  Animation<double>? _scaleAnimation;
+  Animation<double>? _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) return;
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1250),
     )..repeat();
 
     _scaleAnimation = Tween<double>(begin: 0.33, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+      CurvedAnimation(parent: _controller!, curve: Curves.easeOut),
     );
 
     _opacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+      CurvedAnimation(parent: _controller!, curve: Curves.easeOut),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb ||
+        _controller == null ||
+        _scaleAnimation == null ||
+        _opacityAnimation == null) {
+      return Container(
+        width: 10,
+        height: 10,
+        decoration: const BoxDecoration(
+          color: DashboardColors.primary,
+          shape: BoxShape.circle,
+        ),
+      );
+    }
+
     return SizedBox(
       width: 20,
       height: 20,
@@ -786,12 +1137,12 @@ class _PulsingIndicatorState extends State<PulsingIndicator>
         alignment: Alignment.center,
         children: [
           AnimatedBuilder(
-            animation: _controller,
+            animation: _controller!,
             builder: (context, child) {
               return Transform.scale(
-                scale: _scaleAnimation.value,
+                scale: _scaleAnimation!.value,
                 child: Opacity(
-                  opacity: _opacityAnimation.value,
+                  opacity: _opacityAnimation!.value,
                   child: Container(
                     width: 20,
                     height: 20,

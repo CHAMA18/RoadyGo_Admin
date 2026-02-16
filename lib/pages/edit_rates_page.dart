@@ -1,11 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/models/rate_model.dart';
 import 'package:roadygo_admin/services/rate_service.dart';
 import 'package:roadygo_admin/theme.dart';
 
 const String _fontFamily = 'Satoshi';
+const List<String> _towFleetClasses = ['Car Tow', 'Truck Tow'];
+
+String _normalizeFleetClass(String fleetClass) {
+  final normalized = fleetClass.trim().toLowerCase();
+  if (normalized == 'car tow' ||
+      normalized == 'car tow pricing' ||
+      normalized == 'standard') {
+    return 'Car Tow';
+  }
+  if (normalized == 'truck tow' ||
+      normalized == 'truck tow pricing' ||
+      normalized == 'corporate' ||
+      normalized == 'premium' ||
+      normalized == 'luxury') {
+    return 'Truck Tow';
+  }
+  return fleetClass.trim();
+}
+
+List<RateModel> _towRatesOnly(List<RateModel> rates) {
+  final byFleetClass = <String, RateModel>{};
+  for (final rate in rates) {
+    final fleetClass = _normalizeFleetClass(rate.fleetClass);
+    if (!_towFleetClasses.contains(fleetClass)) continue;
+    final normalizedRate = rate.fleetClass == fleetClass
+        ? rate
+        : rate.copyWith(fleetClass: fleetClass);
+    final existing = byFleetClass[fleetClass];
+    if (existing == null ||
+        normalizedRate.updatedAt.isAfter(existing.updatedAt)) {
+      byFleetClass[fleetClass] = normalizedRate;
+    }
+  }
+  return _towFleetClasses
+      .where(byFleetClass.containsKey)
+      .map((fleetClass) => byFleetClass[fleetClass]!)
+      .toList();
+}
 
 /// Edit Rates Page for RoadyGo Admin
 class EditRatesPage extends StatefulWidget {
@@ -30,7 +69,8 @@ class _EditRatesPageState extends State<EditRatesPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor:
+          isDark ? AppColors.darkBackground : AppColors.lightBackground,
       body: Column(
         children: [
           _EditRatesHeader(isDark: isDark),
@@ -49,27 +89,31 @@ class _EditRatesPageState extends State<EditRatesPage> {
                         Icon(
                           Icons.error_outline,
                           size: 48,
-                          color: isDark ? AppColors.darkError : AppColors.lightError,
+                          color: isDark
+                              ? AppColors.darkError
+                              : AppColors.lightError,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           rateService.error!,
                           style: TextStyle(
                             fontFamily: _fontFamily,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () => rateService.fetchRates(),
-                          child: const Text('Retry'),
+                          child: Text(context.tr('Retry')),
                         ),
                       ],
                     ),
                   );
                 }
 
-                final rates = rateService.rates;
+                final rates = _towRatesOnly(rateService.rates);
 
                 if (rates.isEmpty) {
                   return _EmptyRatesState(isDark: isDark);
@@ -90,18 +134,39 @@ class _EditRatesPageState extends State<EditRatesPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddRateDialog(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Consumer<RateService>(
+        builder: (context, rateService, _) {
+          final rates = _towRatesOnly(rateService.rates);
+          if (rates.length >= _towFleetClasses.length) {
+            return const SizedBox.shrink();
+          }
+          final existingClasses = rates.map((rate) => rate.fleetClass).toSet();
+          final missingClass = _towFleetClasses.firstWhere(
+            (fleetClass) => !existingClasses.contains(fleetClass),
+            orElse: () => _towFleetClasses.first,
+          );
+          return FloatingActionButton(
+            onPressed: () => _showAddRateDialog(
+              context,
+              presetFleetClass: missingClass,
+            ),
+            backgroundColor: AppColors.primary,
+            child: const Icon(Icons.add, color: Colors.white),
+          );
+        },
       ),
     );
   }
 
-  void _showAddRateDialog(BuildContext context) {
+  void _showAddRateDialog(
+    BuildContext context, {
+    String? presetFleetClass,
+  }) {
     showDialog(
       context: context,
-      builder: (context) => const _RateFormDialog(),
+      builder: (context) => _RateFormDialog(
+        presetFleetClass: presetFleetClass,
+      ),
     );
   }
 }
@@ -122,7 +187,9 @@ class _EditRatesHeader extends StatelessWidget {
         bottom: 16,
       ),
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.darkBackgroundSecondary : AppColors.lightBackgroundSecondary)
+        color: (isDark
+                ? AppColors.darkBackgroundSecondary
+                : AppColors.lightBackgroundSecondary)
             .withValues(alpha: 0.8),
       ),
       child: Row(
@@ -135,19 +202,23 @@ class _EditRatesHeader extends StatelessWidget {
               child: Icon(
                 Icons.arrow_back_ios,
                 size: 20,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
               ),
             ),
           ),
           Expanded(
             child: Center(
               child: Text(
-                'Edit Rates',
+                context.tr('Edit Rates'),
                 style: TextStyle(
                   fontFamily: _fontFamily,
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
                 ),
               ),
             ),
@@ -178,21 +249,25 @@ class _EmptyRatesState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No rates configured',
+            context.tr('No rates configured'),
             style: TextStyle(
               fontFamily: _fontFamily,
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the + button to add a new rate',
+            context.tr('Tap the + button to add a new rate'),
             style: TextStyle(
               fontFamily: _fontFamily,
               fontSize: 14,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
         ],
@@ -213,7 +288,9 @@ class _RateCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBackgroundSecondary : AppColors.lightBackgroundSecondary,
+        color: isDark
+            ? AppColors.darkBackgroundSecondary
+            : AppColors.lightBackgroundSecondary,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -242,7 +319,8 @@ class _RateCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _getFleetColor(rate.fleetClass).withValues(alpha: 0.2),
+                    color:
+                        _getFleetColor(rate.fleetClass).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -257,12 +335,14 @@ class _RateCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        rate.fleetClass,
+                        _normalizeFleetClass(rate.fleetClass),
                         style: TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.lightTextPrimary,
                         ),
                       ),
                       Text(
@@ -270,7 +350,9 @@ class _RateCard extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 12,
-                          color: rate.isActive ? Colors.green : Colors.red,
+                          color: rate.isActive
+                              ? AppColors.primary
+                              : AppColors.lightError,
                         ),
                       ),
                     ],
@@ -280,20 +362,13 @@ class _RateCard extends StatelessWidget {
                   onPressed: () => _showEditDialog(context),
                   icon: Icon(
                     Icons.edit_outlined,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => _showDeleteDialog(context),
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: isDark ? AppColors.darkError : AppColors.lightError,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Rate details
           Padding(
             padding: const EdgeInsets.all(16),
@@ -337,26 +412,22 @@ class _RateCard extends StatelessWidget {
   }
 
   Color _getFleetColor(String fleetClass) {
-    switch (fleetClass.toLowerCase()) {
-      case 'standard':
-        return Colors.blue;
-      case 'premium':
-        return Colors.orange;
-      case 'luxury':
-        return Colors.purple;
+    switch (_normalizeFleetClass(fleetClass).toLowerCase()) {
+      case 'car tow':
+        return AppColors.primary;
+      case 'truck tow':
+        return AppColors.secondary;
       default:
         return AppColors.primary;
     }
   }
 
   IconData _getFleetIcon(String fleetClass) {
-    switch (fleetClass.toLowerCase()) {
-      case 'standard':
+    switch (_normalizeFleetClass(fleetClass).toLowerCase()) {
+      case 'car tow':
         return Icons.directions_car;
-      case 'premium':
-        return Icons.directions_car_filled;
-      case 'luxury':
-        return Icons.local_taxi;
+      case 'truck tow':
+        return Icons.local_shipping;
       default:
         return Icons.directions_car;
     }
@@ -366,55 +437,6 @@ class _RateCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => _RateFormDialog(rate: rate),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? AppColors.darkBackgroundSecondary : AppColors.lightBackgroundSecondary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Delete Rate',
-          style: TextStyle(
-            fontFamily: _fontFamily,
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to delete the ${rate.fleetClass} rate?',
-          style: TextStyle(
-            fontFamily: _fontFamily,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                fontFamily: _fontFamily,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await context.read<RateService>().deleteRate(rate.id);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.lightError,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete', style: TextStyle(fontFamily: _fontFamily)),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -441,7 +463,9 @@ class _RateDetailRow extends StatelessWidget {
           style: TextStyle(
             fontFamily: _fontFamily,
             fontSize: 14,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
         ),
         Text(
@@ -450,7 +474,8 @@ class _RateDetailRow extends StatelessWidget {
             fontFamily: _fontFamily,
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+            color:
+                isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           ),
         ),
       ],
@@ -461,8 +486,9 @@ class _RateDetailRow extends StatelessWidget {
 /// Rate form dialog for add/edit
 class _RateFormDialog extends StatefulWidget {
   final RateModel? rate;
+  final String? presetFleetClass;
 
-  const _RateFormDialog({this.rate});
+  const _RateFormDialog({this.rate, this.presetFleetClass});
 
   @override
   State<_RateFormDialog> createState() => _RateFormDialogState();
@@ -470,7 +496,7 @@ class _RateFormDialog extends StatefulWidget {
 
 class _RateFormDialogState extends State<_RateFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _fleetClassController;
+  late String _selectedFleetClass;
   late TextEditingController _baseFareController;
   late TextEditingController _perKmRateController;
   late TextEditingController _perMinuteRateController;
@@ -484,18 +510,29 @@ class _RateFormDialogState extends State<_RateFormDialog> {
   @override
   void initState() {
     super.initState();
-    _fleetClassController = TextEditingController(text: widget.rate?.fleetClass ?? '');
-    _baseFareController = TextEditingController(text: widget.rate?.baseFare.toString() ?? '');
-    _perKmRateController = TextEditingController(text: widget.rate?.perKmRate.toString() ?? '');
-    _perMinuteRateController = TextEditingController(text: widget.rate?.perMinuteRate.toString() ?? '');
-    _minimumFareController = TextEditingController(text: widget.rate?.minimumFare.toString() ?? '');
-    _bookingFeeController = TextEditingController(text: widget.rate?.bookingFee.toString() ?? '');
+    _selectedFleetClass = _normalizeFleetClass(
+      widget.rate?.fleetClass ??
+          widget.presetFleetClass ??
+          _towFleetClasses.first,
+    );
+    if (!_towFleetClasses.contains(_selectedFleetClass)) {
+      _selectedFleetClass = _towFleetClasses.first;
+    }
+    _baseFareController =
+        TextEditingController(text: widget.rate?.baseFare.toString() ?? '');
+    _perKmRateController =
+        TextEditingController(text: widget.rate?.perKmRate.toString() ?? '');
+    _perMinuteRateController = TextEditingController(
+        text: widget.rate?.perMinuteRate.toString() ?? '');
+    _minimumFareController =
+        TextEditingController(text: widget.rate?.minimumFare.toString() ?? '');
+    _bookingFeeController =
+        TextEditingController(text: widget.rate?.bookingFee.toString() ?? '');
     _isActive = widget.rate?.isActive ?? true;
   }
 
   @override
   void dispose() {
-    _fleetClassController.dispose();
     _baseFareController.dispose();
     _perKmRateController.dispose();
     _perMinuteRateController.dispose();
@@ -507,9 +544,13 @@ class _RateFormDialogState extends State<_RateFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? AppColors.darkBackgroundSecondary : AppColors.lightBackgroundSecondary;
-    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-    final labelColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final backgroundColor = isDark
+        ? AppColors.darkBackgroundSecondary
+        : AppColors.lightBackgroundSecondary;
+    final textColor =
+        isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+    final labelColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
 
     return AlertDialog(
       backgroundColor: backgroundColor,
@@ -530,13 +571,52 @@ class _RateFormDialogState extends State<_RateFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildTextField(
-                  controller: _fleetClassController,
-                  label: 'Fleet Class',
-                  hint: 'e.g., Standard, Premium, Luxury',
-                  isDark: isDark,
-                  labelColor: labelColor,
-                  textColor: textColor,
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedFleetClass,
+                  style: TextStyle(
+                    fontFamily: _fontFamily,
+                    color: textColor,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Select Tow Type',
+                    labelStyle: TextStyle(
+                      fontFamily: _fontFamily,
+                      color: labelColor,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color:
+                            isDark ? AppColors.darkLine : AppColors.lightLine,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color:
+                            isDark ? AppColors.darkLine : AppColors.lightLine,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  items: _towFleetClasses
+                      .map((fleetClass) => DropdownMenuItem<String>(
+                            value: fleetClass,
+                            child: Text(
+                              fleetClass,
+                              style: const TextStyle(fontFamily: _fontFamily),
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: isEditing
+                      ? null
+                      : (value) {
+                          if (value == null) return;
+                          setState(() => _selectedFleetClass = value);
+                        },
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
@@ -616,7 +696,7 @@ class _RateFormDialogState extends State<_RateFormDialog> {
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            context.tr('Cancel'),
             style: TextStyle(
               fontFamily: _fontFamily,
               color: labelColor,
@@ -628,7 +708,8 @@ class _RateFormDialogState extends State<_RateFormDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           child: _isSaving
               ? const SizedBox(
@@ -656,10 +737,12 @@ class _RateFormDialogState extends State<_RateFormDialog> {
     required Color labelColor,
     required Color textColor,
     TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      readOnly: readOnly,
       style: TextStyle(
         fontFamily: _fontFamily,
         color: textColor,
@@ -709,9 +792,23 @@ class _RateFormDialogState extends State<_RateFormDialog> {
     final rateService = context.read<RateService>();
     final now = DateTime.now();
 
+    if (!isEditing) {
+      final alreadyExists = _towRatesOnly(rateService.rates).any(
+        (rate) => _normalizeFleetClass(rate.fleetClass) == _selectedFleetClass,
+      );
+      if (alreadyExists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('$_selectedFleetClass pricing already exists.')),
+        );
+        setState(() => _isSaving = false);
+        return;
+      }
+    }
+
     final rate = RateModel(
       id: widget.rate?.id ?? '',
-      fleetClass: _fleetClassController.text.trim(),
+      fleetClass: _selectedFleetClass,
       baseFare: double.tryParse(_baseFareController.text) ?? 0.0,
       perKmRate: double.tryParse(_perKmRateController.text) ?? 0.0,
       perMinuteRate: double.tryParse(_perMinuteRateController.text) ?? 0.0,

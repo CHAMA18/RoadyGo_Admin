@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/models/region_model.dart';
 import 'package:roadygo_admin/nav.dart';
 import 'package:roadygo_admin/services/region_service.dart';
@@ -62,7 +63,7 @@ class _RegionsSectionState extends State<RegionsSection> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Configured Regions',
+                    context.tr('Configured Regions'),
                     style: TextStyle(
                       fontFamily: _fontFamily,
                       fontSize: 18,
@@ -74,7 +75,7 @@ class _RegionsSectionState extends State<RegionsSection> {
                     onPressed: () => context.push(AppRoutes.editRegion),
                     icon: Icon(Icons.add, size: 18, color: AppColors.primary),
                     label: Text(
-                      'Add New',
+                      context.tr('Add New'),
                       style: TextStyle(
                         fontFamily: _fontFamily,
                         fontSize: 14,
@@ -593,7 +594,7 @@ class _ErrorWidget extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Failed to load regions',
+            context.tr('Failed to load regions'),
             style: TextStyle(
               fontFamily: _fontFamily,
               fontSize: 16,
@@ -603,7 +604,7 @@ class _ErrorWidget extends StatelessWidget {
           const SizedBox(height: 8),
           ElevatedButton(
             onPressed: onRetry,
-            child: const Text('Retry'),
+            child: Text(context.tr('Retry')),
           ),
         ],
       ),
@@ -652,7 +653,7 @@ class _EmptyRegionsWidget extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => context.push(AppRoutes.editRegion),
               icon: const Icon(Icons.add),
-              label: const Text('Add Region'),
+              label: Text(context.tr('Add Region')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,

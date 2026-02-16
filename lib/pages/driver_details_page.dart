@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/models/driver_model.dart';
 import 'package:roadygo_admin/models/activity_model.dart';
 import 'package:roadygo_admin/pages/admin_dashboard_page.dart';
@@ -89,7 +90,7 @@ class _DriverDetailsPageState extends State<DriverDetailsPage> {
 
                         // Activity history section
                         Text(
-                          'Activity History',
+                          context.tr('Activity History'),
                           style: TextStyle(
                             fontFamily: _fontFamily,
                             fontSize: 18,
@@ -197,7 +198,7 @@ class DriverDetailsHeader extends StatelessWidget {
 
           // Title
           Text(
-            'Driver Details',
+            context.tr('Driver Details'),
             style: TextStyle(
               fontFamily: _fontFamily,
               fontSize: 20,
@@ -530,8 +531,8 @@ class FloatBalanceCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Text(
-                'Add Funds',
+              child: Text(
+                context.tr('Add Funds'),
                 style: TextStyle(
                   fontFamily: _fontFamily,
                   fontSize: 14,
@@ -551,19 +552,19 @@ class FloatBalanceCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Funds'),
+        title: Text(context.tr('Add Funds')),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Amount',
+          decoration: InputDecoration(
+            labelText: context.tr('Amount'),
             prefixText: '\$ ',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.tr('Cancel')),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -573,7 +574,7 @@ class FloatBalanceCard extends StatelessWidget {
                 if (context.mounted) Navigator.pop(context);
               }
             },
-            child: const Text('Add'),
+            child: Text(context.tr('Add')),
           ),
         ],
       ),
@@ -617,8 +618,8 @@ class ActionButtonsRow extends StatelessWidget {
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Call Driver',
+                  Text(
+                    context.tr('Call Driver'),
                     style: TextStyle(
                       fontFamily: _fontFamily,
                       fontSize: 14,
@@ -651,17 +652,17 @@ class ActionButtonsRow extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.chat,
                     color: Colors.white,
                     size: 18,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    'Message',
+                    context.tr('Message'),
                     style: TextStyle(
                       fontFamily: _fontFamily,
                       fontSize: 14,

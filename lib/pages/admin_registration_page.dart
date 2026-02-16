@@ -1,6 +1,8 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/services/auth_service.dart';
 import 'package:roadygo_admin/theme.dart';
 import 'package:roadygo_admin/nav.dart';
@@ -19,19 +21,93 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isPhoneVerified = false;
+  bool _isVerifyingPhone = false;
+  _CountryOption _selectedCountry = _CountryOption.defaultCountry;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.removeListener(_onPhoneChanged);
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _onPhoneChanged() {
+    if (_isPhoneVerified) {
+      setState(() => _isPhoneVerified = false);
+    }
+  }
+
+  String _normalizePhoneDigits(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  String _fullPhoneNumber() {
+    final digits = _normalizePhoneDigits(_phoneController.text);
+    return '${_selectedCountry.dialCode}$digits';
+  }
+
+  String? _validatePhone(String? value) {
+    final digits = _normalizePhoneDigits(value ?? '');
+    if (digits.isEmpty) {
+      return context.tr('Please enter your phone number');
+    }
+    if (digits.length < 6 || digits.length > 15) {
+      return context.tr('Please enter a valid phone number');
+    }
+    return null;
+  }
+
+  Future<void> _verifyPhoneNumber() async {
+    final error = _validatePhone(_phoneController.text);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.lightError,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isVerifyingPhone = true);
+    final authService = context.read<AuthService>();
+    final isAvailable = await authService.isPhoneAvailable(_fullPhoneNumber());
+    if (!mounted) return;
+
+    setState(() {
+      _isVerifyingPhone = false;
+      _isPhoneVerified = isAvailable;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isAvailable
+              ? context.tr('Phone number verified successfully')
+              : context.tr('This phone number is already in use'),
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isAvailable ? AppColors.lightSuccess : AppColors.lightError,
+      ),
+    );
   }
 
   @override
@@ -76,7 +152,7 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                     children: [
                       // Title
                       Text(
-                        'Create Account',
+                        context.tr('Create Account'),
                         style: TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 24,
@@ -127,8 +203,8 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                       
                       // Name field
                       FloatingLabelTextField(
-                        label: 'Name',
-                        placeholder: 'Enter your full name',
+                        label: context.tr('Name'),
+                        placeholder: context.tr('Enter your full name'),
                         controller: _nameController,
                         backgroundColor: backgroundColor,
                         textColor: textColor,
@@ -136,7 +212,7 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                         borderColor: borderColor,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your name';
+                            return context.tr('Please enter your name');
                           }
                           return null;
                         },
@@ -145,8 +221,8 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                       
                       // Email field
                       FloatingLabelTextField(
-                        label: 'Email',
-                        placeholder: 'Enter your email',
+                        label: context.tr('Email'),
+                        placeholder: context.tr('Enter your email'),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         backgroundColor: backgroundColor,
@@ -155,19 +231,36 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                         borderColor: borderColor,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email';
+                            return context.tr('Please enter your email');
                           }
                           if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                            return 'Please enter a valid email';
+                            return context.tr('Please enter a valid email');
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 24),
+
+                      // Phone field with country selector
+                      _PhoneVerificationField(
+                        label: context.tr('Phone Number'),
+                        controller: _phoneController,
+                        selectedCountry: _selectedCountry,
+                        isVerified: _isPhoneVerified,
+                        isVerifying: _isVerifyingPhone,
+                        backgroundColor: backgroundColor,
+                        textColor: textColor,
+                        labelColor: labelColor,
+                        borderColor: borderColor,
+                        onCountryTap: _showCountryPicker,
+                        onVerifyTap: _verifyPhoneNumber,
+                        validator: _validatePhone,
+                      ),
+                      const SizedBox(height: 24),
                       
                       // Password field
                       PasswordTextField(
-                        placeholder: 'Password',
+                        placeholder: context.tr('Password'),
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -176,10 +269,12 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                         borderColor: borderColor,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
+                            return context.tr('Please enter a password');
                           }
                           if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
+                            return context.tr(
+                              'Password must be at least 6 characters',
+                            );
                           }
                           return null;
                         },
@@ -188,7 +283,7 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                       
                       // Confirm Password field
                       FloatingLabelTextField(
-                        label: 'Confirm Password',
+                        label: context.tr('Confirm Password'),
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
                         backgroundColor: backgroundColor,
@@ -205,10 +300,10 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
+                            return context.tr('Please confirm your password');
                           }
                           if (value != _passwordController.text) {
-                            return 'Passwords do not match';
+                            return context.tr('Passwords do not match');
                           }
                           return null;
                         },
@@ -241,8 +336,8 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     )
-                                  : const Text(
-                                      'Sign Up',
+                                  : Text(
+                                      context.tr('Sign Up'),
                                       style: TextStyle(
                                         fontFamily: _fontFamily,
                                         fontSize: 18,
@@ -260,7 +355,7 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
                         child: TextButton(
                           onPressed: _handleLogin,
                           child: Text(
-                            'Login',
+                            context.tr('Login'),
                             style: TextStyle(
                               fontFamily: _fontFamily,
                               fontSize: 14,
@@ -283,12 +378,26 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
 
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_isPhoneVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('Please verify your phone number first')),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.lightError,
+        ),
+      );
+      return;
+    }
 
     final authService = context.read<AuthService>();
     final success = await authService.signUp(
       name: _nameController.text,
       email: _emailController.text,
       password: _passwordController.text,
+      phoneNumber: _fullPhoneNumber(),
+      countryCode: _selectedCountry.code,
+      countryDialCode: _selectedCountry.dialCode,
+      isPhoneVerified: _isPhoneVerified,
     );
 
     if (success && mounted) {
@@ -298,6 +407,40 @@ class _AdminRegistrationPageState extends State<AdminRegistrationPage> {
 
   void _handleLogin() {
     context.go(AppRoutes.login);
+  }
+
+  Future<void> _showCountryPicker() async {
+    showCountryPicker(
+      context: context,
+      showPhoneCode: true,
+      onSelect: (country) {
+        if (!mounted) return;
+        setState(() {
+          _selectedCountry = _CountryOption.fromCountry(country);
+          _isPhoneVerified = false;
+        });
+      },
+      countryListTheme: CountryListThemeData(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        inputDecoration: InputDecoration(
+          hintText: context.tr('Search country'),
+          prefixIcon: const Icon(Icons.search_rounded),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -544,5 +687,236 @@ class PasswordTextField extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _PhoneVerificationField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final _CountryOption selectedCountry;
+  final bool isVerified;
+  final bool isVerifying;
+  final Color backgroundColor;
+  final Color textColor;
+  final Color labelColor;
+  final Color borderColor;
+  final VoidCallback onCountryTap;
+  final VoidCallback onVerifyTap;
+  final String? Function(String?)? validator;
+
+  const _PhoneVerificationField({
+    required this.label,
+    required this.controller,
+    required this.selectedCountry,
+    required this.isVerified,
+    required this.isVerifying,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.labelColor,
+    required this.borderColor,
+    required this.onCountryTap,
+    required this.onVerifyTap,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        TextFormField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          validator: validator,
+          style: TextStyle(
+            fontFamily: _fontFamily,
+            fontSize: 16,
+            color: textColor,
+          ),
+          decoration: InputDecoration(
+            hintText: context.tr('Enter phone number'),
+            hintStyle: TextStyle(
+              fontFamily: _fontFamily,
+              fontSize: 16,
+              color: labelColor,
+            ),
+            contentPadding: const EdgeInsets.only(left: 146, right: 98, top: 18, bottom: 18),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 2),
+            ),
+            filled: false,
+          ),
+        ),
+        Positioned(
+          left: 10,
+          top: 8,
+          bottom: 8,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onCountryTap,
+              borderRadius: BorderRadius.circular(10),
+              child: Ink(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkAlternate.withValues(alpha: 0.6)
+                      : AppColors.lightAlternate,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(selectedCountry.flag, style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 6),
+                    Text(
+                      selectedCountry.dialCode,
+                      style: TextStyle(
+                        fontFamily: _fontFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: labelColor,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          right: 8,
+          top: 8,
+          bottom: 8,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isVerifying ? null : onVerifyTap,
+              borderRadius: BorderRadius.circular(10),
+              child: Ink(
+                width: 84,
+                decoration: BoxDecoration(
+                  color: isVerified
+                      ? AppColors.lightSuccess.withValues(alpha: 0.16)
+                      : AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isVerified
+                        ? AppColors.lightSuccess.withValues(alpha: 0.4)
+                        : AppColors.primary.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Center(
+                  child: isVerifying
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isVerified)
+                              const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.lightSuccess)
+                            else
+                              const Icon(Icons.verified_user_outlined, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              isVerified ? context.tr('Verified') : context.tr('Verify'),
+                              style: TextStyle(
+                                fontFamily: _fontFamily,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isVerified ? AppColors.lightSuccess : AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: -8,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            color: backgroundColor,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: _fontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: labelColor,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CountryOption {
+  final String code;
+  final String name;
+  final String dialCode;
+
+  const _CountryOption({
+    required this.code,
+    required this.name,
+    required this.dialCode,
+  });
+
+  static const _CountryOption defaultCountry = _CountryOption(
+    code: 'US',
+    name: 'United States',
+    dialCode: '+1',
+  );
+
+  String get flag => _toFlagEmoji(code);
+
+  factory _CountryOption.fromCountry(Country country) {
+    return _CountryOption(
+      code: country.countryCode,
+      name: country.name,
+      dialCode: '+${country.phoneCode}',
+    );
+  }
+
+  static String _toFlagEmoji(String countryCode) {
+    final upper = countryCode.toUpperCase();
+    if (upper.length != 2) return '🌐';
+    final first = upper.codeUnitAt(0) - 0x41 + 0x1F1E6;
+    final second = upper.codeUnitAt(1) - 0x41 + 0x1F1E6;
+    return String.fromCharCode(first) + String.fromCharCode(second);
   }
 }

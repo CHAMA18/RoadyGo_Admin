@@ -7,6 +7,8 @@ import 'package:roadygo_admin/pages/login_page.dart';
 import 'package:roadygo_admin/pages/profile_settings_page.dart';
 import 'package:roadygo_admin/pages/edit_rates_page.dart';
 import 'package:roadygo_admin/pages/edit_region_page.dart';
+import 'package:roadygo_admin/pages/personal_information_page.dart';
+import 'package:roadygo_admin/pages/security_page.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
@@ -68,6 +70,20 @@ class AppRouter {
           );
         },
       ),
+      GoRoute(
+        path: AppRoutes.personalInformation,
+        name: 'personalInformation',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: PersonalInformationPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.security,
+        name: 'security',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: SecurityPage(),
+        ),
+      ),
     ],
   );
 }
@@ -80,4 +96,6 @@ class AppRoutes {
   static const String profileSettings = '/profile-settings';
   static const String editRates = '/edit-rates';
   static const String editRegion = '/edit-region';
+  static const String personalInformation = '/personal-information';
+  static const String security = '/security';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/services/auth_service.dart';
 import 'package:roadygo_admin/theme.dart';
 import 'package:roadygo_admin/nav.dart';
@@ -133,8 +134,8 @@ class _LoginPageState extends State<LoginPage> {
                       
                       // Email field
                       FloatingLabelTextField(
-                        label: 'Email',
-                        placeholder: 'Enter your email',
+                        label: context.tr('Email'),
+                        placeholder: context.tr('Enter your email'),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         backgroundColor: backgroundColor,
@@ -143,10 +144,10 @@ class _LoginPageState extends State<LoginPage> {
                         borderColor: borderColor,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email';
+                            return context.tr('Please enter your email');
                           }
                           if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                            return 'Please enter a valid email';
+                            return context.tr('Please enter a valid email');
                           }
                           return null;
                         },
@@ -155,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                       
                       // Password field
                       FloatingLabelTextField(
-                        label: 'Password',
+                        label: context.tr('Password'),
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         backgroundColor: backgroundColor,
@@ -172,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
+                            return context.tr('Please enter your password');
                           }
                           return null;
                         },
@@ -190,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: Text(
-                            'Forgot Password?',
+                            context.tr('Forgot Password?'),
                             style: TextStyle(
                               fontFamily: _fontFamily,
                               fontSize: 13,
@@ -228,8 +229,8 @@ class _LoginPageState extends State<LoginPage> {
                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     )
-                                  : const Text(
-                                      'Login',
+                                  : Text(
+                                      context.tr('Login'),
                                       style: TextStyle(
                                         fontFamily: _fontFamily,
                                         fontSize: 18,
@@ -314,7 +315,7 @@ class _LoginPageState extends State<LoginPage> {
           backgroundColor: backgroundColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            'Reset Password',
+            context.tr('Reset Password'),
             style: TextStyle(
               fontFamily: _fontFamily,
               fontWeight: FontWeight.w600,
@@ -326,7 +327,9 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Enter your email address and we\'ll send you a link to reset your password.',
+                context.tr(
+                  'Enter your email address and we\'ll send you a link to reset your password.',
+                ),
                 style: TextStyle(
                   fontFamily: _fontFamily,
                   fontSize: 14,
@@ -343,7 +346,7 @@ class _LoginPageState extends State<LoginPage> {
                   color: textColor,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Email address',
+                  hintText: context.tr('Email address'),
                   hintStyle: TextStyle(
                     fontFamily: _fontFamily,
                     fontSize: 16,
@@ -370,7 +373,7 @@ class _LoginPageState extends State<LoginPage> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Cancel',
+                context.tr('Cancel'),
                 style: TextStyle(
                   fontFamily: _fontFamily,
                   color: labelColor,
@@ -386,8 +389,8 @@ class _LoginPageState extends State<LoginPage> {
                           final email = emailController.text.trim();
                           if (email.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please enter your email'),
+                              SnackBar(
+                                content: Text(context.tr('Please enter your email')),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -401,8 +404,11 @@ class _LoginPageState extends State<LoginPage> {
                               SnackBar(
                                 content: Text(
                                   success
-                                      ? 'Password reset email sent! Check your inbox.'
-                                      : authService.error ?? 'Failed to send reset email',
+                                      ? context.tr(
+                                          'Password reset email sent! Check your inbox.',
+                                        )
+                                      : authService.error ??
+                                          context.tr('Failed to send reset email'),
                                 ),
                                 behavior: SnackBarBehavior.floating,
                                 backgroundColor: success ? Colors.green : Colors.red,
@@ -426,8 +432,8 @@ class _LoginPageState extends State<LoginPage> {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Text(
-                          'Send Reset Link',
+                      : Text(
+                          context.tr('Send Reset Link'),
                           style: TextStyle(fontFamily: _fontFamily),
                         ),
                 );

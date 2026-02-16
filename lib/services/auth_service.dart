@@ -1,13 +1,29 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:roadygo_admin/models/user_model.dart';
+
+class ProfilePhotoUploadResult {
+  final String? photoUrl;
+  final String? errorMessage;
+  final bool syncedToFirestore;
+
+  const ProfilePhotoUploadResult({
+    required this.photoUrl,
+    required this.errorMessage,
+    required this.syncedToFirestore,
+  });
+
+  bool get isSuccess => photoUrl != null;
+}
 
 /// Authentication service for handling Firebase Auth operations
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
   User? _firebaseUser;
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -49,6 +65,10 @@ class AuthService extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    required String phoneNumber,
+    required String countryCode,
+    required String countryDialCode,
+    required bool isPhoneVerified,
   }) async {
     _isLoading = true;
     _error = null;
@@ -68,6 +88,10 @@ class AuthService extends ChangeNotifier {
           id: credential.user!.uid,
           name: name.trim(),
           email: email.trim(),
+          phoneNumber: phoneNumber.trim(),
+          countryCode: countryCode,
+          countryDialCode: countryDialCode,
+          isPhoneVerified: isPhoneVerified,
           role: 'admin',
           createdAt: now,
           updatedAt: now,
@@ -114,7 +138,7 @@ class AuthService extends ChangeNotifier {
       } else if (errorString.contains('permission-denied')) {
         errorCode = 'permission-denied';
       }
-      
+
       _error = _getAuthErrorMessage(errorCode);
       _isLoading = false;
       notifyListeners();
@@ -170,7 +194,7 @@ class AuthService extends ChangeNotifier {
       } else if (errorString.contains('network-request-failed')) {
         errorCode = 'network-request-failed';
       }
-      
+
       _error = _getAuthErrorMessage(errorCode);
       _isLoading = false;
       notifyListeners();
@@ -217,6 +241,10 @@ class AuthService extends ChangeNotifier {
   /// Update user profile
   Future<bool> updateUserProfile({
     String? name,
+    String? phoneNumber,
+    String? countryCode,
+    String? countryDialCode,
+    bool? isPhoneVerified,
     String? photoUrl,
   }) async {
     if (_currentUser == null || _firebaseUser == null) return false;
@@ -226,6 +254,10 @@ class AuthService extends ChangeNotifier {
         'updatedAt': Timestamp.now(),
       };
       if (name != null) updates['name'] = name;
+      if (phoneNumber != null) updates['phoneNumber'] = phoneNumber;
+      if (countryCode != null) updates['countryCode'] = countryCode;
+      if (countryDialCode != null) updates['countryDialCode'] = countryDialCode;
+      if (isPhoneVerified != null) updates['isPhoneVerified'] = isPhoneVerified;
       if (photoUrl != null) updates['photoUrl'] = photoUrl;
 
       await _firestore
@@ -235,6 +267,10 @@ class AuthService extends ChangeNotifier {
 
       _currentUser = _currentUser!.copyWith(
         name: name ?? _currentUser!.name,
+        phoneNumber: phoneNumber ?? _currentUser!.phoneNumber,
+        countryCode: countryCode ?? _currentUser!.countryCode,
+        countryDialCode: countryDialCode ?? _currentUser!.countryDialCode,
+        isPhoneVerified: isPhoneVerified ?? _currentUser!.isPhoneVerified,
         photoUrl: photoUrl ?? _currentUser!.photoUrl,
         updatedAt: DateTime.now(),
       );
@@ -246,10 +282,148 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Upload profile photo and persist the URL to Auth + Firestore profile data.
+  Future<ProfilePhotoUploadResult> uploadProfilePhoto({
+    required Uint8List imageBytes,
+    required String fileName,
+  }) async {
+    if (_firebaseUser == null) {
+      return const ProfilePhotoUploadResult(
+        photoUrl: null,
+        errorMessage: 'You must be signed in to upload a photo.',
+        syncedToFirestore: false,
+      );
+    }
+
+    try {
+      final sanitizedName = fileName.trim().isEmpty ? 'profile.jpg' : fileName;
+      final contentType = _guessContentType(sanitizedName);
+      final ref = _storage
+          .ref()
+          .child('users')
+          .child(_firebaseUser!.uid)
+          .child('profile_photos')
+          .child('${DateTime.now().millisecondsSinceEpoch}_$sanitizedName');
+
+      await ref.putData(
+        imageBytes,
+        SettableMetadata(contentType: contentType),
+      );
+
+      final downloadUrl = await ref.getDownloadURL();
+      await _firebaseUser!.updatePhotoURL(downloadUrl);
+
+      bool syncedToFirestore = true;
+      try {
+        await _firestore.collection('users').doc(_firebaseUser!.uid).set({
+          'photoUrl': downloadUrl,
+          'updatedAt': Timestamp.now(),
+        }, SetOptions(merge: true));
+        if (_currentUser != null) {
+          _currentUser = _currentUser!.copyWith(
+            photoUrl: downloadUrl,
+            updatedAt: DateTime.now(),
+          );
+          notifyListeners();
+        } else {
+          await _loadUserData(_firebaseUser!.uid);
+          notifyListeners();
+        }
+      } catch (e) {
+        syncedToFirestore = false;
+        debugPrint('Profile photo saved in Auth but Firestore sync failed: $e');
+      }
+
+      return ProfilePhotoUploadResult(
+        photoUrl: downloadUrl,
+        errorMessage: syncedToFirestore
+            ? null
+            : 'Photo uploaded, but Firestore profile sync failed.',
+        syncedToFirestore: syncedToFirestore,
+      );
+    } on FirebaseException catch (e) {
+      debugPrint('Profile photo upload failed: ${e.code} - ${e.message}');
+      return ProfilePhotoUploadResult(
+        photoUrl: null,
+        errorMessage: _mapStorageError(e),
+        syncedToFirestore: false,
+      );
+    } catch (e) {
+      debugPrint('Profile photo upload failed: $e');
+      return const ProfilePhotoUploadResult(
+        photoUrl: null,
+        errorMessage: 'Photo upload failed. Please try again.',
+        syncedToFirestore: false,
+      );
+    }
+  }
+
+  String _guessContentType(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    return 'image/jpeg';
+  }
+
+  String _mapStorageError(FirebaseException e) {
+    switch (e.code) {
+      case 'unauthorized':
+      case 'permission-denied':
+        return 'Permission denied for photo upload. Deploy/update Firebase Storage rules.';
+      case 'storage/unauthorized':
+      case 'storage/permission-denied':
+        return 'Permission denied for photo upload. Deploy/update Firebase Storage rules.';
+      case 'object-not-found':
+      case 'storage/object-not-found':
+        return 'Upload path not found in Firebase Storage.';
+      case 'bucket-not-found':
+      case 'storage/bucket-not-found':
+        return 'Storage bucket not found. Check Firebase storageBucket configuration.';
+      case 'quota-exceeded':
+      case 'storage/quota-exceeded':
+        return 'Storage quota exceeded. Increase your Firebase Storage plan/quota.';
+      case 'unauthenticated':
+      case 'storage/unauthenticated':
+        return 'Please sign in again, then retry photo upload.';
+      case 'retry-limit-exceeded':
+      case 'storage/retry-limit-exceeded':
+        return 'Upload timed out. Check network and retry.';
+      default:
+        return e.message ?? 'Photo upload failed. Please try again.';
+    }
+  }
+
   /// Clear error message
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  /// Returns true when no user already owns the provided phone number.
+  Future<bool> isPhoneAvailable(String phoneNumber) async {
+    // During registration we can be unauthenticated; current rules block
+    // collection reads on /users for anonymous clients.
+    if (_auth.currentUser == null) {
+      return true;
+    }
+
+    try {
+      final result = await _firestore
+          .collection('users')
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
+      return result.docs.isEmpty;
+    } catch (e) {
+      final error = e.toString();
+      if (error.contains('permission-denied')) {
+        debugPrint('Phone availability check skipped due to Firestore rules.');
+        return true;
+      }
+      debugPrint('Phone availability check failed: $e');
+      return false;
+    }
   }
 
   String _getAuthErrorMessage(String code) {

@@ -1,6 +1,6 @@
 {
-    "name": "roadygo_admin",
-    "short_name": "roadygo_admin",
+    "name": "RoadyGo Admin",
+    "short_name": "RoadyGo Admin",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

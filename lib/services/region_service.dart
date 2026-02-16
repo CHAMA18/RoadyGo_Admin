@@ -5,7 +5,7 @@ import 'package:roadygo_admin/models/region_model.dart';
 /// Service for managing region data in Firestore
 class RegionService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   List<RegionModel> _regions = [];
   bool _isLoading = false;
   String? _error;
@@ -40,15 +40,18 @@ class RegionService extends ChangeNotifier {
       debugPrint('Error fetching regions: $e');
     }
   }
-  
+
   /// Get only active regions
-  List<RegionModel> get activeRegions => _regions.where((r) => r.isActive).toList();
-  
+  List<RegionModel> get activeRegions =>
+      _regions.where((r) => r.isActive).toList();
+
   /// Get computed statistics
   int get totalConfiguredRegions => _regions.length;
   int get totalActiveRegions => _regions.where((r) => r.isActive).length;
-  int get totalDriversAcrossRegions => _regions.fold<int>(0, (sum, r) => sum + r.activeDrivers);
-  int get totalRidesAcrossRegions => _regions.fold<int>(0, (sum, r) => sum + r.totalRides);
+  int get totalDriversAcrossRegions =>
+      _regions.fold<int>(0, (total, r) => total + r.activeDrivers);
+  int get totalRidesAcrossRegions =>
+      _regions.fold<int>(0, (total, r) => total + r.totalRides);
 
   /// Get a single region by ID
   Future<RegionModel?> getRegion(String regionId) async {
@@ -65,21 +68,25 @@ class RegionService extends ChangeNotifier {
   }
 
   /// Create a new region
-  Future<bool> createRegion(RegionModel region) async {
+  Future<String?> createRegion(RegionModel region) async {
     try {
-      await _firestore.collection('regions').add(region.toJson());
+      final docRef =
+          await _firestore.collection('regions').add(region.toJson());
       await fetchRegions();
-      return true;
+      return docRef.id;
     } catch (e) {
       debugPrint('Error creating region: $e');
-      return false;
+      return null;
     }
   }
 
   /// Update region
   Future<bool> updateRegion(RegionModel region) async {
     try {
-      await _firestore.collection('regions').doc(region.id).update(region.toJson());
+      await _firestore
+          .collection('regions')
+          .doc(region.id)
+          .update(region.toJson());
       await fetchRegions();
       return true;
     } catch (e) {
@@ -109,7 +116,8 @@ class RegionService extends ChangeNotifier {
   }
 
   /// Get region pricing summary for display
-  Map<String, dynamic> getRegionPricingSummary(RegionModel region, {bool isCorporate = false}) {
+  Map<String, dynamic> getRegionPricingSummary(RegionModel region,
+      {bool isCorporate = false}) {
     if (isCorporate) {
       return {
         'baseFare': region.corpCostOfRide,
