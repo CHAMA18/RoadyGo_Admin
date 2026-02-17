@@ -1031,6 +1031,7 @@ class _ExpandableSettingItemState extends State<_ExpandableSettingItem>
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         GestureDetector(
           onTapDown: (_) => setState(() => _isPressed = true),
@@ -1135,7 +1136,10 @@ class _ExpandableSettingItemState extends State<_ExpandableSettingItem>
         // Expandable Options Panel
         SizeTransition(
           sizeFactor: _expandAnimation,
-          child: _getExpandedPanel(),
+          child: SizedBox(
+            width: double.infinity,
+            child: _getExpandedPanel(),
+          ),
         ),
 
         if (widget.showDivider && !_isExpanded)
@@ -1254,29 +1258,37 @@ class _LanguageOptionsPanel extends StatelessWidget {
             : AppColors.lightBackground.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 280),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: ThemeService.supportedLanguageCodes.map((code) {
-              final flag = _flags[code] ?? '🌐';
-              final label = ThemeService.supportedLanguageNames[code] ?? code;
-              return _CompactLanguageButton(
-                flag: flag,
-                label: label,
-                languageCode: code,
-                isTranslationLocked:
-                    !AppLocalizations.isLanguageFullyTranslated(code),
-                isSelected: themeService.languageCode == code,
-                isDark: isDark,
-                onTap: () => themeService.setLanguage(code),
-              );
-            }).toList(),
-          ),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const spacing = 8.0;
+          final itemWidth = (constraints.maxWidth - spacing) / 2;
+
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 280),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: ThemeService.supportedLanguageCodes.map((code) {
+                  final flag = _flags[code] ?? '🌐';
+                  final label = ThemeService.supportedLanguageNames[code] ?? code;
+                  return _CompactLanguageButton(
+                    width: itemWidth,
+                    flag: flag,
+                    label: label,
+                    languageCode: code,
+                    isTranslationLocked:
+                        !AppLocalizations.isLanguageFullyTranslated(code),
+                    isSelected: themeService.languageCode == code,
+                    isDark: isDark,
+                    onTap: () => themeService.setLanguage(code),
+                  );
+                }).toList(),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1284,6 +1296,7 @@ class _LanguageOptionsPanel extends StatelessWidget {
 
 /// Compact Language Button for grid layout
 class _CompactLanguageButton extends StatelessWidget {
+  final double width;
   final String flag;
   final String label;
   final String languageCode;
@@ -1293,6 +1306,7 @@ class _CompactLanguageButton extends StatelessWidget {
   final VoidCallback onTap;
 
   const _CompactLanguageButton({
+    required this.width,
     required this.flag,
     required this.label,
     required this.languageCode,
@@ -1310,7 +1324,7 @@ class _CompactLanguageButton extends StatelessWidget {
         children: [
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: 100,
+            width: width,
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             decoration: BoxDecoration(
               color: isSelected

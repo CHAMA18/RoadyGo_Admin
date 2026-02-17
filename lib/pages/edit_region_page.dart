@@ -117,6 +117,27 @@ class _EditRegionPageState extends State<EditRegionPage> {
     });
   }
 
+  String _normalizeRegionName(String value) {
+    return value.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  bool _isValidRegionName(String value) {
+    // Accept plain city/country names with spaces, apostrophes, and hyphens.
+    final pattern = RegExp(r"^[A-Za-z][A-Za-z '\-]{1,59}$");
+    return pattern.hasMatch(value);
+  }
+
+  String? _validateRegionName(String? value) {
+    final regionName = _normalizeRegionName(value ?? '');
+    if (regionName.isEmpty) {
+      return 'Enter a city or country name';
+    }
+    if (!_isValidRegionName(regionName)) {
+      return 'Use a valid city or country name';
+    }
+    return null;
+  }
+
   @override
   void dispose() {
     _regionNameController.dispose();
@@ -139,7 +160,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
     try {
       final regionService = context.read<RegionService>();
       final now = DateTime.now();
-      final regionName = _regionNameController.text.trim();
+      final regionName = _normalizeRegionName(_regionNameController.text);
 
       final duplicateExists = _availableRegions.any(
         (region) =>
@@ -248,7 +269,6 @@ class _EditRegionPageState extends State<EditRegionPage> {
 
     // Colors matching the app theme
     final primaryColor = colorScheme.primary;
-    final accentColor = colorScheme.secondary;
     final backgroundColor =
         isDark ? AppColors.darkBackground : AppColors.lightBackground;
     final cardColor = isDark
@@ -371,7 +391,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Region',
+                                  'Region (City/Country)',
                                   style: TextStyle(
                                     fontFamily: _fontFamily,
                                     fontSize: 12,
@@ -388,7 +408,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: inputBgColor,
-                                    hintText: 'Choose existing region',
+                                    hintText: 'Choose existing city/country',
                                     hintStyle: TextStyle(
                                       fontFamily: _fontFamily,
                                       color: subtextColor,
@@ -406,7 +426,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide:
-                                          BorderSide(color: primaryColor),
+                                          BorderSide(color: borderColor),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 14,
@@ -483,13 +503,14 @@ class _EditRegionPageState extends State<EditRegionPage> {
                               children: [
                                 if (_availableRegions.isNotEmpty)
                                   _FloatingLabelDropdown(
-                                    label: context.tr('Region Name'),
+                                    label: context.tr('City or Country'),
                                     value: _selectedRegionId,
                                     inputBgColor: inputBgColor,
                                     borderColor: borderColor,
                                     textColor: textColor,
                                     subtextColor: subtextColor,
-                                    hint: context.tr('Choose existing region'),
+                                    hint:
+                                        context.tr('Choose existing city/country'),
                                     items: _availableRegions
                                         .map(
                                           (region) =>
@@ -511,24 +532,26 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   )
                                 else
                                   _FloatingLabelInput(
-                                    label: context.tr('Region Name'),
+                                    label: context.tr('City or Country'),
                                     controller: _regionNameController,
                                     inputBgColor: inputBgColor,
                                     borderColor: borderColor,
                                     textColor: textColor,
                                     subtextColor: subtextColor,
                                     keyboardType: TextInputType.text,
+                                    validator: _validateRegionName,
                                   ),
                                 if (_currentRegion == null) ...[
                                   const SizedBox(height: 16),
                                   _FloatingLabelInput(
-                                    label: context.tr('New Region Name'),
+                                    label: context.tr('New City or Country'),
                                     controller: _regionNameController,
                                     inputBgColor: inputBgColor,
                                     borderColor: borderColor,
                                     textColor: textColor,
                                     subtextColor: subtextColor,
                                     keyboardType: TextInputType.text,
+                                    validator: _validateRegionName,
                                   ),
                                 ],
                                 const SizedBox(height: 16),
@@ -575,16 +598,12 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   label: context.tr('Float Percent'),
                                   controller: _floatPercentController,
                                   inputBgColor: inputBgColor,
-                                  borderColor:
-                                      accentColor.withValues(alpha: 0.5),
+                                  borderColor: borderColor,
                                   textColor: textColor,
-                                  subtextColor: accentColor,
-                                  isAccent: true,
-                                  accentColor: accentColor,
+                                  subtextColor: subtextColor,
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  suffix: '2/2',
                                 ),
                               ],
                             ),
@@ -662,12 +681,9 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   label: context.tr('Corporate Float Percent'),
                                   controller: _corpFloatPercentController,
                                   inputBgColor: inputBgColor,
-                                  borderColor:
-                                      accentColor.withValues(alpha: 0.5),
+                                  borderColor: borderColor,
                                   textColor: textColor,
-                                  subtextColor: accentColor,
-                                  isAccent: true,
-                                  accentColor: accentColor,
+                                  subtextColor: subtextColor,
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
@@ -783,6 +799,7 @@ class _FloatingLabelInput extends StatelessWidget {
   final TextInputType keyboardType;
   final String? suffix;
   final String? prefix;
+  final String? Function(String?)? validator;
 
   const _FloatingLabelInput({
     required this.label,
@@ -796,6 +813,7 @@ class _FloatingLabelInput extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.suffix,
     this.prefix,
+    this.validator,
   });
 
   @override
@@ -845,6 +863,10 @@ class _FloatingLabelInput extends StatelessWidget {
                 ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
                   contentPadding: const EdgeInsets.only(
                       left: 16, right: 16, bottom: 12, top: 4),
                   isDense: true,
@@ -856,12 +878,13 @@ class _FloatingLabelInput extends StatelessWidget {
                     color: textColor.withValues(alpha: 0.75),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a value';
-                  }
-                  return null;
-                },
+                validator: validator ??
+                    (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a value';
+                      }
+                      return null;
+                    },
               ),
             ],
           ),
@@ -944,6 +967,10 @@ class _FloatingLabelDropdown extends StatelessWidget {
             ),
             decoration: InputDecoration(
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
               contentPadding:
                   const EdgeInsets.only(left: 16, right: 16, bottom: 12, top: 4),
               isDense: true,

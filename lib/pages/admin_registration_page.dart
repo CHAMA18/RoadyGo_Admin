@@ -478,34 +478,14 @@ class MaxiTaxiHeader extends StatelessWidget {
                   height: 120,
                   width: 120,
                   fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -12,
-              right: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: const Text(
-                  'Admin',
-                  style: TextStyle(
-                    fontFamily: _fontFamily,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      AppAssets.appLogoFallback,
+                      height: 120,
+                      width: 120,
+                      fit: BoxFit.cover,
+                    );
+                  },
                 ),
               ),
             ),
