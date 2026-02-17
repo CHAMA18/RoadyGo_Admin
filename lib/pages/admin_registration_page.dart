@@ -6,6 +6,7 @@ import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/services/auth_service.dart';
 import 'package:roadygo_admin/theme.dart';
 import 'package:roadygo_admin/nav.dart';
+import 'package:roadygo_admin/constants/app_assets.dart';
 
 const String _fontFamily = 'Satoshi';
 
@@ -473,7 +474,7 @@ class MaxiTaxiHeader extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.asset(
-                  'assets/images/WhatsApp_Image_2026-02-04_at_00.58.08_4.jpeg',
+                  AppAssets.appLogo,
                   height: 120,
                   width: 120,
                   fit: BoxFit.cover,

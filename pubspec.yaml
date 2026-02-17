@@ -68,5 +68,5 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/WhatsApp_Image_2026-02-04_at_00.58.08_4.jpeg
+  image_path: assets/images/RoadyGo_Admin.jpg
   remove_alpha_ios: true
