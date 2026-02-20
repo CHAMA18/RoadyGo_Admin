@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:roadygo_admin/constants/eu_africa_country_metadata.dart';
 import 'package:roadygo_admin/l10n/app_localizations.dart';
 import 'package:roadygo_admin/models/region_model.dart';
 import 'package:roadygo_admin/services/region_service.dart';
@@ -19,12 +24,110 @@ class EditRegionPage extends StatefulWidget {
 }
 
 class _EditRegionPageState extends State<EditRegionPage> {
+  static const List<String> _europeAndAfricaCountryCodes = [
+    // Europe
+    'AL','AD','AM','AT','AZ','BY','BE','BA','BG','HR','CY','CZ','DK','EE','FI','FR',
+    'GE','DE','GR','HU','IS','IE','IT','KZ','XK','LV','LI','LT','LU','MT','MD','MC',
+    'ME','NL','MK','NO','PL','PT','RO','RU','SM','RS','SK','SI','ES','SE','CH','TR',
+    'UA','GB','VA',
+    // Africa
+    'DZ','AO','BJ','BW','BF','BI','CV','CM','CF','TD','KM','CG','CD','CI','DJ','EG',
+    'GQ','ER','ET','GA','GM','GH','GN','GW','KE','LS','LR','LY','MG','MW','ML','MR',
+    'MU','MA','MZ','NA','NE','NG','RW','ST','SN','SC','SL','SO','ZA','SS','SD','SZ',
+    'TZ','TG','TN','UG','ZM','ZW'
+  ];
+
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   bool _isLoading = true;
   RegionModel? _currentRegion;
   List<RegionModel> _availableRegions = [];
+  Map<String, List<String>> _allCitiesByCountryCode = const {};
+  final Map<String, List<String>> _countryCityCache = {};
+  bool _hasLoadedCountryCityAsset = false;
+  final CountryService _countryService = CountryService();
+  late final List<Country> _eligibleCountries;
+  Country? _selectedCountry;
   String? _selectedRegionId;
+
+  List<RegionModel> get _eligibleRegions {
+    final selectedId = _selectedRegionId;
+    return _availableRegions.where((region) {
+      if (selectedId != null && region.id == selectedId) {
+        return true;
+      }
+      final country = _resolveCountryFromRegion(region);
+      return country != null;
+    }).toList();
+  }
+
+  String? get _selectedRegionDropdownValue {
+    if (_selectedRegionId == null) return null;
+    final exists = _eligibleRegions.any((region) => region.id == _selectedRegionId);
+    return exists ? _selectedRegionId : null;
+  }
+
+  CountryRegionMetadata? get _selectedCountryMetadata {
+    final code = _selectedCountry?.countryCode;
+    if (code == null || code.isEmpty) return null;
+    return kEuropeAfricaCountryMetadata[code];
+  }
+
+  List<String> _citiesForCountry(String countryCode) {
+    final normalizedCountryCode = countryCode.toUpperCase();
+    final cached = _countryCityCache[normalizedCountryCode];
+    if (cached != null) return cached;
+
+    final normalizedToOriginal = <String, String>{};
+
+    void addCity(String value) {
+      final city = _normalizeRegionName(value);
+      if (city.isEmpty) return;
+      normalizedToOriginal.putIfAbsent(city.toLowerCase(), () => city);
+    }
+
+    final allCities = _allCitiesByCountryCode[normalizedCountryCode];
+    if (allCities != null) {
+      for (final city in allCities) {
+        addCity(city);
+      }
+    }
+
+    final metadata = kEuropeAfricaCountryMetadata[normalizedCountryCode];
+    if (metadata != null) {
+      for (final seedCity in metadata.seedCities) {
+        addCity(seedCity);
+      }
+    }
+
+    for (final region in _availableRegions) {
+      final country = _resolveCountryFromRegion(region);
+      if (country?.countryCode.toUpperCase() != normalizedCountryCode) continue;
+      addCity(_resolveCityName(region));
+    }
+
+    final cities = normalizedToOriginal.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    _countryCityCache[normalizedCountryCode] = cities;
+    return cities;
+  }
+
+  List<String> get _selectedCountryCities {
+    final code = _selectedCountry?.countryCode;
+    if (code == null || code.isEmpty) return const [];
+    return _citiesForCountry(code);
+  }
+
+  String? _cityDropdownValue(List<String> cities) {
+    final current = _normalizeRegionName(_regionNameController.text);
+    if (current.isEmpty) return null;
+    for (final city in cities) {
+      if (city.toLowerCase() == current.toLowerCase()) {
+        return city;
+      }
+    }
+    return null;
+  }
 
   // Standard Pricing Controllers
   late TextEditingController _regionNameController;
@@ -43,10 +146,16 @@ class _EditRegionPageState extends State<EditRegionPage> {
   void initState() {
     super.initState();
     _initControllers();
-    _loadRegion();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadRegion();
+    });
   }
 
   void _initControllers() {
+    _eligibleCountries = _countryService
+      .findCountriesByCode(_europeAndAfricaCountryCodes)
+      ..sort((a, b) => a.name.compareTo(b.name));
     _regionNameController = TextEditingController();
     _costOfRideController = TextEditingController();
     _costPerKmController = TextEditingController();
@@ -58,32 +167,83 @@ class _EditRegionPageState extends State<EditRegionPage> {
     _corpFloatPercentController = TextEditingController();
   }
 
+  Future<void> _loadCountryCityAsset() async {
+    if (_hasLoadedCountryCityAsset) return;
+    try {
+      final raw = await rootBundle.loadString(
+        'assets/data/eu_africa_country_cities.json',
+      );
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        _hasLoadedCountryCityAsset = true;
+        return;
+      }
+
+      final parsed = <String, List<String>>{};
+      decoded.forEach((key, value) {
+        if (value is! List) return;
+        final normalizedToOriginal = <String, String>{};
+        for (final item in value) {
+          final city = _normalizeRegionName('$item');
+          if (city.isEmpty) continue;
+          normalizedToOriginal.putIfAbsent(city.toLowerCase(), () => city);
+        }
+        final cities = normalizedToOriginal.values.toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        parsed[key.toUpperCase()] = cities;
+      });
+
+      _allCitiesByCountryCode = parsed;
+    } catch (_) {
+      // Keep running with metadata seed cities if the asset cannot be loaded.
+      _allCitiesByCountryCode = const {};
+    } finally {
+      _countryCityCache.clear();
+      _hasLoadedCountryCityAsset = true;
+    }
+  }
+
   Future<void> _loadRegion() async {
+    await _loadCountryCityAsset();
     final regionService = context.read<RegionService>();
     await regionService.fetchRegions();
+    if (!mounted) return;
     _availableRegions = regionService.regions;
+    _countryCityCache.clear();
 
     if (widget.region != null) {
       _selectedRegionId = widget.region!.id;
       _populateFields(widget.region!);
+      if (!mounted) return;
       setState(() => _isLoading = false);
       return;
     }
 
-    if (_availableRegions.isNotEmpty) {
-      final firstRegion = _availableRegions.first;
+    if (_eligibleRegions.isNotEmpty) {
+      final firstRegion = _eligibleRegions.first;
       _selectedRegionId = firstRegion.id;
       _populateFields(firstRegion);
     } else {
       _prepareNewRegion();
     }
+    if (!mounted) return;
     setState(() => _isLoading = false);
   }
 
   void _populateFields(RegionModel region) {
     _currentRegion = region;
     _selectedRegionId = region.id;
-    _regionNameController.text = region.name;
+    final country = _resolveCountryFromRegion(region);
+    _selectedCountry = country;
+    final cityName = _resolveCityName(region);
+    if (cityName.isNotEmpty) {
+      _regionNameController.text = cityName;
+    } else if (country != null) {
+      final cities = _citiesForCountry(country.countryCode);
+      _regionNameController.text = cities.isNotEmpty ? cities.first : '';
+    } else {
+      _regionNameController.clear();
+    }
     _costOfRideController.text = region.costOfRide.toStringAsFixed(2);
     _costPerKmController.text = region.costPerKm.toStringAsFixed(2);
     _costPerMinController.text = region.costPerMin.toStringAsFixed(2);
@@ -98,7 +258,15 @@ class _EditRegionPageState extends State<EditRegionPage> {
   void _prepareNewRegion() {
     _currentRegion = null;
     _selectedRegionId = null;
-    _regionNameController.clear();
+    _selectedCountry =
+        _eligibleCountries.isNotEmpty ? _eligibleCountries.first : null;
+    final defaultCountryCode = _selectedCountry?.countryCode;
+    if (defaultCountryCode != null && defaultCountryCode.isNotEmpty) {
+      final cities = _citiesForCountry(defaultCountryCode);
+      _regionNameController.text = cities.isNotEmpty ? cities.first : '';
+    } else {
+      _regionNameController.clear();
+    }
     _costOfRideController.text = '0.00';
     _costPerKmController.text = '0.00';
     _costPerMinController.text = '0.00';
@@ -121,21 +289,121 @@ class _EditRegionPageState extends State<EditRegionPage> {
     return value.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
-  bool _isValidRegionName(String value) {
-    // Accept plain city/country names with spaces, apostrophes, and hyphens.
-    final pattern = RegExp(r"^[A-Za-z][A-Za-z '\-]{1,59}$");
-    return pattern.hasMatch(value);
+  bool _isRegionSeparator(String char) {
+    return char == ' ' || char == '\'' || char == '-' || char == '.';
   }
 
-  String? _validateRegionName(String? value) {
-    final regionName = _normalizeRegionName(value ?? '');
-    if (regionName.isEmpty) {
-      return 'Enter a city or country name';
+  bool _isAsciiAlphaNumeric(String char) {
+    return RegExp(r'^[A-Za-z0-9]$').hasMatch(char);
+  }
+
+  bool _isValidCityName(String value) {
+    final normalized = _normalizeRegionName(value);
+    if (normalized.length < 2 || normalized.length > 60) return false;
+    final runes = normalized.runes.toList();
+    if (runes.isEmpty) return false;
+
+    final first = String.fromCharCode(runes.first);
+    final last = String.fromCharCode(runes.last);
+    if (_isRegionSeparator(first) || _isRegionSeparator(last)) return false;
+
+    var hasAlphaNumeric = false;
+    for (final rune in runes) {
+      final char = String.fromCharCode(rune);
+      if (_isRegionSeparator(char)) continue;
+      if (_isAsciiAlphaNumeric(char) || rune > 127) {
+        hasAlphaNumeric = true;
+        continue;
+      }
+      return false;
     }
-    if (!_isValidRegionName(regionName)) {
-      return 'Use a valid city or country name';
+    return hasAlphaNumeric;
+  }
+
+  String? _validateCityName(String? value) {
+    final cityName = _normalizeRegionName(value ?? '');
+    if (cityName.isEmpty) {
+      return 'Enter a city name';
+    }
+    if (!_isValidCityName(cityName)) {
+      return 'Use 2-60 characters for city names';
     }
     return null;
+  }
+
+  Country? _resolveCountryFromRegion(RegionModel region) {
+    final code = region.countryCode.trim();
+    if (code.isNotEmpty) {
+      final byCode = _countryService.findByCode(code);
+      if (byCode != null &&
+          _eligibleCountries.any((country) => country.countryCode == byCode.countryCode)) {
+        return byCode;
+      }
+    }
+
+    final storedCountryName = region.countryName.trim();
+    if (storedCountryName.isNotEmpty) {
+      for (final country in _eligibleCountries) {
+        if (country.name.toLowerCase() == storedCountryName.toLowerCase()) {
+          return country;
+        }
+      }
+    }
+
+    final parsedCountryName = _extractCountryFromRegionName(region.name);
+    if (parsedCountryName != null) {
+      for (final country in _eligibleCountries) {
+        if (country.name.toLowerCase() == parsedCountryName.toLowerCase()) {
+          return country;
+        }
+      }
+    }
+    return null;
+  }
+
+  String _resolveCityName(RegionModel region) {
+    if (region.cityName.trim().isNotEmpty) {
+      return region.cityName.trim();
+    }
+    return _extractCityFromRegionName(region.name) ?? region.name.trim();
+  }
+
+  String? _extractCityFromRegionName(String value) {
+    final cleaned = value.trim().replaceFirst(
+      RegExp(
+          r'^[\u{1F1E6}-\u{1F1FF}]{2}\s*',
+          unicode: true),
+      '',
+    );
+    if (cleaned.isEmpty) return null;
+    if (!cleaned.contains(',')) return cleaned;
+    return cleaned.split(',').first.trim();
+  }
+
+  String? _extractCountryFromRegionName(String value) {
+    final cleaned = value.trim().replaceFirst(
+      RegExp(
+          r'^[\u{1F1E6}-\u{1F1FF}]{2}\s*',
+          unicode: true),
+      '',
+    );
+    if (!cleaned.contains(',')) return null;
+    return cleaned.split(',').last.trim();
+  }
+
+  String _buildRegionDisplayName({
+    required String cityName,
+    required Country country,
+  }) {
+    return '${country.flagEmoji} $cityName, ${country.name}';
+  }
+
+  String _displayRegionName(RegionModel region) {
+    final country = _resolveCountryFromRegion(region);
+    if (country == null) return region.name;
+    final cityName = _resolveCityName(region);
+    if (cityName.isEmpty) return region.name;
+    return _buildRegionDisplayName(cityName: cityName, country: country);
   }
 
   @override
@@ -159,8 +427,47 @@ class _EditRegionPageState extends State<EditRegionPage> {
 
     try {
       final regionService = context.read<RegionService>();
+      regionService.clearError();
       final now = DateTime.now();
-      final regionName = _normalizeRegionName(_regionNameController.text);
+      final cityName = _normalizeRegionName(_regionNameController.text);
+      final cityValidation = _validateCityName(cityName);
+      if (cityValidation != null) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(cityValidation),
+            backgroundColor: AppColors.lightError,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      if (_selectedCountry == null) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Select a valid country from Europe or Africa.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      final selectedCountryCode = _selectedCountry!.countryCode;
+      final countryMetadata = kEuropeAfricaCountryMetadata[selectedCountryCode];
+      if (countryMetadata == null || countryMetadata.currencyCode.trim().isEmpty) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No currency configuration exists for this country.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      final regionName = _buildRegionDisplayName(
+        cityName: cityName,
+        country: _selectedCountry!,
+      );
 
       final duplicateExists = _availableRegions.any(
         (region) =>
@@ -184,6 +491,11 @@ class _EditRegionPageState extends State<EditRegionPage> {
       final updatedRegion = RegionModel(
         id: _currentRegion?.id ?? '',
         name: regionName,
+        cityName: cityName,
+        countryCode: selectedCountryCode,
+        countryName: _selectedCountry!.name,
+        currencyCode: countryMetadata.currencyCode,
+        currencySymbol: countryMetadata.currencySymbol,
         description: _currentRegion?.description ?? '',
         activeDrivers: _currentRegion?.activeDrivers ?? 0,
         totalRides: _currentRegion?.totalRides ?? 0,
@@ -216,11 +528,30 @@ class _EditRegionPageState extends State<EditRegionPage> {
         if (success) {
           await regionService.fetchRegions();
           if (!mounted) return;
-          _availableRegions = regionService.regions;
-          if (createdRegionId != null) {
-            _selectRegionById(createdRegionId);
-          } else if (_currentRegion != null) {
-            _selectRegionById(_currentRegion!.id);
+          final refreshedRegions = [...regionService.regions];
+          final focusRegionId = createdRegionId ?? _currentRegion?.id ?? '';
+          if (focusRegionId.isNotEmpty &&
+              !refreshedRegions.any((region) => region.id == focusRegionId)) {
+            final directRegion = await regionService.getRegion(focusRegionId);
+            if (directRegion != null) {
+              refreshedRegions.add(directRegion);
+            }
+          }
+
+          refreshedRegions.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+
+          if (!mounted) return;
+          setState(() {
+            _availableRegions = refreshedRegions;
+            _countryCityCache.clear();
+          });
+
+          if (focusRegionId.isNotEmpty) {
+            _selectRegionById(focusRegionId);
+          } else if (refreshedRegions.isNotEmpty) {
+            _selectRegionById(refreshedRegions.first.id);
           }
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -233,9 +564,11 @@ class _EditRegionPageState extends State<EditRegionPage> {
             ),
           );
         } else {
+          final errorMessage =
+              regionService.error ?? context.tr('Failed to save region pricing');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(context.tr('Failed to save region pricing')),
+              content: Text(errorMessage),
               backgroundColor: AppColors.lightError,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -281,6 +614,8 @@ class _EditRegionPageState extends State<EditRegionPage> {
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final inputBgColor =
         isDark ? AppColors.darkAlternate : AppColors.lightAlternate;
+    final currencyPrefix =
+        '${_selectedCountryMetadata?.currencyCode ?? _currentRegion?.currencyCode ?? 'USD'} ';
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -403,8 +738,8 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                 const SizedBox(height: 10),
                                 DropdownButtonFormField<String>(
                                   key: ValueKey(
-                                      _selectedRegionId ?? 'new-region'),
-                                  initialValue: _selectedRegionId,
+                                      _selectedRegionDropdownValue ?? 'new-region'),
+                                  initialValue: _selectedRegionDropdownValue,
                                   decoration: InputDecoration(
                                     filled: true,
                                     fillColor: inputBgColor,
@@ -438,12 +773,12 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                     color: textColor,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                  items: _availableRegions
+                                  items: _eligibleRegions
                                       .map(
                                         (region) => DropdownMenuItem<String>(
                                           value: region.id,
                                           child: Text(
-                                            region.name,
+                                            _displayRegionName(region),
                                             style: const TextStyle(
                                               fontFamily: _fontFamily,
                                             ),
@@ -501,23 +836,23 @@ class _EditRegionPageState extends State<EditRegionPage> {
                             padding: const EdgeInsets.all(20),
                             child: Column(
                               children: [
-                                if (_availableRegions.isNotEmpty)
+                                if (_eligibleRegions.isNotEmpty)
                                   _FloatingLabelDropdown(
                                     label: context.tr('City or Country'),
-                                    value: _selectedRegionId,
+                                    value: _selectedRegionDropdownValue,
                                     inputBgColor: inputBgColor,
                                     borderColor: borderColor,
                                     textColor: textColor,
                                     subtextColor: subtextColor,
                                     hint:
                                         context.tr('Choose existing city/country'),
-                                    items: _availableRegions
+                                    items: _eligibleRegions
                                         .map(
                                           (region) =>
                                               DropdownMenuItem<String>(
                                             value: region.id,
                                             child: Text(
-                                              region.name,
+                                              _displayRegionName(region),
                                               style: const TextStyle(
                                                 fontFamily: _fontFamily,
                                               ),
@@ -529,31 +864,101 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                       if (value == null) return;
                                       _selectRegionById(value);
                                     },
-                                  )
-                                else
-                                  _FloatingLabelInput(
-                                    label: context.tr('City or Country'),
-                                    controller: _regionNameController,
-                                    inputBgColor: inputBgColor,
-                                    borderColor: borderColor,
-                                    textColor: textColor,
-                                    subtextColor: subtextColor,
-                                    keyboardType: TextInputType.text,
-                                    validator: _validateRegionName,
                                   ),
-                                if (_currentRegion == null) ...[
-                                  const SizedBox(height: 16),
-                                  _FloatingLabelInput(
-                                    label: context.tr('New City or Country'),
-                                    controller: _regionNameController,
-                                    inputBgColor: inputBgColor,
-                                    borderColor: borderColor,
-                                    textColor: textColor,
-                                    subtextColor: subtextColor,
-                                    keyboardType: TextInputType.text,
-                                    validator: _validateRegionName,
+                                const SizedBox(height: 16),
+                                _FloatingLabelDropdown(
+                                  label: 'Country (Europe/Africa)',
+                                  value: _selectedCountry?.countryCode,
+                                  inputBgColor: inputBgColor,
+                                  borderColor: borderColor,
+                                  textColor: textColor,
+                                  subtextColor: subtextColor,
+                                  hint: 'Select country',
+                                  items: _eligibleCountries
+                                      .map(
+                                        (country) => DropdownMenuItem<String>(
+                                          value: country.countryCode,
+                                          child: Text(
+                                            '${country.flagEmoji} ${country.name}',
+                                            style: const TextStyle(
+                                              fontFamily: _fontFamily,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value == null) return;
+                                    setState(() {
+                                      _selectedCountry =
+                                          _countryService.findByCode(value);
+                                      final cities = _selectedCountryCities;
+                                      final selectedValue =
+                                          _cityDropdownValue(cities);
+                                      if (selectedValue == null) {
+                                        _regionNameController.text =
+                                            cities.isNotEmpty ? cities.first : '';
+                                      }
+                                    });
+                                  },
+                                ),
+                                if (_selectedCountryMetadata != null) ...[
+                                  const SizedBox(height: 8),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Currency: ${_selectedCountryMetadata!.currencyCode} (${_selectedCountryMetadata!.currencySymbol})',
+                                      style: TextStyle(
+                                        fontFamily: _fontFamily,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: subtextColor,
+                                      ),
+                                    ),
                                   ),
                                 ],
+                                if (_selectedCountryCities.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  _FloatingLabelDropdown(
+                                    label: 'Existing cities for country',
+                                    value: _cityDropdownValue(_selectedCountryCities),
+                                    inputBgColor: inputBgColor,
+                                    borderColor: borderColor,
+                                    textColor: textColor,
+                                    subtextColor: subtextColor,
+                                    hint: 'Select city',
+                                    items: _selectedCountryCities
+                                        .map(
+                                          (city) => DropdownMenuItem<String>(
+                                            value: city,
+                                            child: Text(
+                                              city,
+                                              style: const TextStyle(
+                                                fontFamily: _fontFamily,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (value) {
+                                      if (value == null) return;
+                                      setState(() {
+                                        _regionNameController.text = value;
+                                      });
+                                    },
+                                  ),
+                                ],
+                                const SizedBox(height: 16),
+                                _FloatingLabelInput(
+                                  label: context.tr('City'),
+                                  controller: _regionNameController,
+                                  inputBgColor: inputBgColor,
+                                  borderColor: borderColor,
+                                  textColor: textColor,
+                                  subtextColor: subtextColor,
+                                  keyboardType: TextInputType.text,
+                                  validator: _validateCityName,
+                                ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(
                                   label: context.tr('Cost Of Ride'),
@@ -565,7 +970,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  prefix: '\$ ',
+                                  prefix: currencyPrefix,
                                 ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(
@@ -578,7 +983,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  prefix: '\$ ',
+                                  prefix: currencyPrefix,
                                 ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(
@@ -591,7 +996,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  prefix: '\$ ',
+                                  prefix: currencyPrefix,
                                 ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(
@@ -647,7 +1052,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  prefix: '\$ ',
+                                  prefix: currencyPrefix,
                                 ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(
@@ -661,7 +1066,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  prefix: '\$ ',
+                                  prefix: currencyPrefix,
                                 ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(
@@ -674,7 +1079,7 @@ class _EditRegionPageState extends State<EditRegionPage> {
                                   keyboardType:
                                       const TextInputType.numberWithOptions(
                                           decimal: true),
-                                  prefix: '\$ ',
+                                  prefix: currencyPrefix,
                                 ),
                                 const SizedBox(height: 16),
                                 _FloatingLabelInput(

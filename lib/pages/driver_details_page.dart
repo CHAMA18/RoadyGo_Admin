@@ -438,7 +438,7 @@ class VehicleInfoCard extends StatelessWidget {
                     Text(
                       plateNumber,
                       style: TextStyle(
-                        fontFamily: 'monospace',
+                        fontFamily: _fontFamily,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: isDark ? DashboardColors.textMainDark : DashboardColors.textMainLight,

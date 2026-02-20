@@ -4,6 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class RegionModel {
   final String id;
   final String name;
+  final String cityName;
+  final String countryName;
+  final String countryCode;
+  final String currencyCode;
+  final String currencySymbol;
   final String description;
   final int activeDrivers;
   final int totalRides;
@@ -27,6 +32,11 @@ class RegionModel {
   RegionModel({
     required this.id,
     required this.name,
+    this.cityName = '',
+    this.countryName = '',
+    this.countryCode = '',
+    this.currencyCode = '',
+    this.currencySymbol = '',
     required this.description,
     this.activeDrivers = 0,
     this.totalRides = 0,
@@ -47,6 +57,11 @@ class RegionModel {
     return RegionModel(
       id: id,
       name: json['name'] ?? '',
+      cityName: json['cityName'] ?? '',
+      countryName: json['countryName'] ?? '',
+      countryCode: json['countryCode'] ?? '',
+      currencyCode: json['currencyCode'] ?? '',
+      currencySymbol: json['currencySymbol'] ?? '',
       description: json['description'] ?? '',
       activeDrivers: json['activeDrivers'] ?? 0,
       totalRides: json['totalRides'] ?? 0,
@@ -71,6 +86,11 @@ class RegionModel {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
+      'cityName': cityName,
+      'countryName': countryName,
+      'countryCode': countryCode,
+      'currencyCode': currencyCode,
+      'currencySymbol': currencySymbol,
       'description': description,
       'activeDrivers': activeDrivers,
       'totalRides': totalRides,
@@ -91,6 +111,11 @@ class RegionModel {
   RegionModel copyWith({
     String? id,
     String? name,
+    String? cityName,
+    String? countryName,
+    String? countryCode,
+    String? currencyCode,
+    String? currencySymbol,
     String? description,
     int? activeDrivers,
     int? totalRides,
@@ -109,6 +134,11 @@ class RegionModel {
     return RegionModel(
       id: id ?? this.id,
       name: name ?? this.name,
+      cityName: cityName ?? this.cityName,
+      countryName: countryName ?? this.countryName,
+      countryCode: countryCode ?? this.countryCode,
+      currencyCode: currencyCode ?? this.currencyCode,
+      currencySymbol: currencySymbol ?? this.currencySymbol,
       description: description ?? this.description,
       activeDrivers: activeDrivers ?? this.activeDrivers,
       totalRides: totalRides ?? this.totalRides,

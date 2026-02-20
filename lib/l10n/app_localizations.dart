@@ -90,6 +90,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Manage your account identity and contact details',
       'Management': 'Management',
+      'Credit Management': 'Credit Management',
+      'Manage credits and wallet balances': 'Manage credits and wallet balances',
+      'Credit Management is coming soon': 'Credit Management is coming soon',
       'Message': 'Message',
       'Name': 'Name',
       'Name, email & phone number': 'Name, email & phone number',
@@ -231,6 +234,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Menaxhoni identitetin e llogarisë tuaj dhe detajet e kontaktit',
       'Management': 'Menaxhimi',
+      'Credit Management': 'Menaxhimi i krediteve',
+      'Manage credits and wallet balances': 'Menaxhoni kreditet dhe bilancet e portofolit',
+      'Credit Management is coming soon': 'Menaxhimi i krediteve së shpejti',
       'Message': 'Mesazh',
       'Name': 'Emri',
       'Name, email & phone number': 'Emri, emaili dhe numri i telefonit',
@@ -374,6 +380,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Управувајте со идентитетот на вашата сметка и деталите за контакт',
       'Management': 'Менаџмент',
+      'Credit Management': 'Управување со кредити',
+      'Manage credits and wallet balances': 'Управувајте со кредити и состојба на паричник',
+      'Credit Management is coming soon': 'Управување со кредити наскоро',
       'Message': 'Порака',
       'Name': 'Име',
       'Name, email & phone number': 'Име, е-пошта и телефонски број',
@@ -519,6 +528,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Hesap kimliğinizi ve iletişim bilgilerinizi yönetin',
       'Management': 'Yönetmek',
+      'Credit Management': 'Kredi Yönetimi',
+      'Manage credits and wallet balances': 'Kredi ve cüzdan bakiyelerini yönetin',
+      'Credit Management is coming soon': 'Kredi yönetimi yakında',
       'Message': 'Mesaj',
       'Name': 'İsim',
       'Name, email & phone number': 'Ad, e-posta ve telefon numarası',
@@ -663,6 +675,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Gérez l\'identité de votre compte et vos coordonnées',
       'Management': 'Gestion',
+      'Credit Management': 'Gestion des crédits',
+      'Manage credits and wallet balances': 'Gérer les crédits et les soldes de portefeuille',
+      'Credit Management is coming soon': 'Gestion des crédits bientôt disponible',
       'Message': 'Messagerie',
       'Name': 'Nom',
       'Name, email & phone number': 'Nom, e-mail et numéro de téléphone',
@@ -810,6 +825,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Verwalten Sie Ihre Kontoidentität und Kontaktdaten',
       'Management': 'Verwaltung',
+      'Credit Management': 'Kreditverwaltung',
+      'Manage credits and wallet balances': 'Kredite und Wallet-Guthaben verwalten',
+      'Credit Management is coming soon': 'Kreditverwaltung bald verfügbar',
       'Message': 'Nachricht',
       'Name': 'Bezeichnung',
       'Name, email & phone number': 'Name, E-Mail und Telefonnummer',
@@ -958,6 +976,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Administre la identidad de su cuenta y los datos de contacto',
       'Management': 'Gestión',
+      'Credit Management': 'Gestión de créditos',
+      'Manage credits and wallet balances': 'Administra créditos y saldos de billetera',
+      'Credit Management is coming soon': 'Gestión de créditos próximamente',
       'Message': 'Mensaje',
       'Name': 'Nombre',
       'Name, email & phone number': 'Nombre, correo y teléfono',
@@ -1104,6 +1125,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Gestisci l\'identità del tuo account e i dettagli di contatto',
       'Management': 'Gestione',
+      'Credit Management': 'Gestione crediti',
+      'Manage credits and wallet balances': 'Gestisci crediti e saldo wallet',
+      'Credit Management is coming soon': 'Gestione crediti in arrivo',
       'Message': 'Messaggio',
       'Name': 'Nome',
       'Name, email & phone number': 'Nome, email e numero di telefono',
@@ -1247,6 +1271,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Gerencie a identidade da sua conta e detalhes de contato',
       'Management': 'Gerenciamento',
+      'Credit Management': 'Gestão de crédito',
+      'Manage credits and wallet balances': 'Gerencie créditos e saldos da carteira',
+      'Credit Management is coming soon': 'Gestão de crédito em breve',
       'Message': 'Mensagem',
       'Name': 'Nome',
       'Name, email & phone number': 'Nome, e-mail e número de telefone',
@@ -1390,6 +1417,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Beheer uw accountidentiteit en contactgegevens',
       'Management': 'Beheer',
+      'Credit Management': 'Kredietbeheer',
+      'Manage credits and wallet balances': 'Beheer kredieten en wallet-saldo',
+      'Credit Management is coming soon': 'Kredietbeheer binnenkort beschikbaar',
       'Message': 'Bericht',
       'Name': 'Naam',
       'Name, email & phone number': 'Naam, e-mailadres en telefoonnummer',
@@ -1531,6 +1561,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Zarządzaj tożsamością swojego konta i danymi kontaktowymi',
       'Management': 'Kierownictwo',
+      'Credit Management': 'Zarządzanie kredytami',
+      'Manage credits and wallet balances': 'Zarządzaj kredytami i saldami portfela',
+      'Credit Management is coming soon': 'Zarządzanie kredytami wkrótce',
       'Message': 'Wiadomość',
       'Name': 'Nazwa',
       'Name, email & phone number':
@@ -1676,6 +1709,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Gestionați-vă identitatea contului și detaliile de contact',
       'Management': 'management',
+      'Credit Management': 'Gestionarea creditelor',
+      'Manage credits and wallet balances': 'Gestionează creditele și soldurile portofelului',
+      'Credit Management is coming soon': 'Gestionarea creditelor în curând',
       'Message': 'Mesaj',
       'Name': 'Nume',
       'Name, email & phone number': 'Nume, e-mail și număr de telefon',
@@ -1823,6 +1859,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Διαχειριστείτε την ταυτότητα του λογαριασμού σας και τα στοιχεία επικοινωνίας',
       'Management': 'Διαχείριση',
+      'Credit Management': 'Διαχείριση πιστώσεων',
+      'Manage credits and wallet balances': 'Διαχειριστείτε πιστώσεις και υπόλοιπα πορτοφολιού',
+      'Credit Management is coming soon': 'Η διαχείριση πιστώσεων σύντομα διαθέσιμη',
       'Message': 'Μήνυμα',
       'Name': 'Ονομα',
       'Name, email & phone number': 'Όνομα, email & αριθμός τηλεφώνου',
@@ -1968,6 +2007,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Spravujte identitu svého účtu a kontaktní údaje',
       'Management': 'Řízení',
+      'Credit Management': 'Správa kreditů',
+      'Manage credits and wallet balances': 'Spravujte kredity a zůstatky peněženky',
+      'Credit Management is coming soon': 'Správa kreditů již brzy',
       'Message': 'Zpráva',
       'Name': 'Jméno',
       'Name, email & phone number': 'Jméno, email a telefonní číslo',
@@ -2111,6 +2153,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Kezelje fiókja azonosítóját és elérhetőségeit',
       'Management': 'Menedzsment',
+      'Credit Management': 'Kreditkezelés',
+      'Manage credits and wallet balances': 'Kreditek és pénztárcaegyenlegek kezelése',
+      'Credit Management is coming soon': 'Kreditkezelés hamarosan',
       'Message': 'Üzenet',
       'Name': 'Név',
       'Name, email & phone number': 'Név, email és telefonszám',
@@ -2256,6 +2301,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Hantera din kontoidentitet och kontaktuppgifter',
       'Management': 'Förvaltning',
+      'Credit Management': 'Kredithantering',
+      'Manage credits and wallet balances': 'Hantera krediter och plånbokssaldon',
+      'Credit Management is coming soon': 'Kredithantering kommer snart',
       'Message': 'Meddelande',
       'Name': 'Namn',
       'Name, email & phone number': 'Namn, mejl och telefonnummer',
@@ -2398,6 +2446,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Administrer din kontoidentitet og kontaktoplysninger',
       'Management': 'Ledelse',
+      'Credit Management': 'Kreditstyring',
+      'Manage credits and wallet balances': 'Administrer kreditter og pung-saldi',
+      'Credit Management is coming soon': 'Kreditstyring kommer snart',
       'Message': 'Besked',
       'Name': 'Navn',
       'Name, email & phone number': 'Navn, email og telefonnummer',
@@ -2540,6 +2591,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Hallinnoi tilisi henkilöllisyyttä ja yhteystietoja',
       'Management': 'Hallinto',
+      'Credit Management': 'Luottojen hallinta',
+      'Manage credits and wallet balances': 'Hallinnoi luottoja ja lompakkosaldoja',
+      'Credit Management is coming soon': 'Luottojen hallinta tulossa pian',
       'Message': 'Viesti',
       'Name': 'Nimi',
       'Name, email & phone number': 'Nimi, sähköpostiosoite ja puhelinnumero',
@@ -2680,6 +2734,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Administrer din kontoidentitet og kontaktinformasjon',
       'Management': 'Ledelse',
+      'Credit Management': 'Kredittadministrasjon',
+      'Manage credits and wallet balances': 'Administrer kreditter og lommebok-saldo',
+      'Credit Management is coming soon': 'Kredittadministrasjon kommer snart',
       'Message': 'Beskjed',
       'Name': 'Navn',
       'Name, email & phone number': 'Navn, e-post og telefonnummer',
@@ -2823,6 +2880,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Управлявайте самоличността на вашия акаунт и данните за контакт',
       'Management': 'Управление',
+      'Credit Management': 'Управление на кредити',
+      'Manage credits and wallet balances': 'Управлявайте кредити и салда на портфейла',
+      'Credit Management is coming soon': 'Управление на кредити скоро',
       'Message': 'Съобщение',
       'Name': 'Име',
       'Name, email & phone number': 'Име, имейл и телефонен номер',
@@ -2968,6 +3028,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Upravljajte identitetom svog računa i detaljima za kontakt',
       'Management': 'Upravljanje',
+      'Credit Management': 'Upravljanje kreditima',
+      'Manage credits and wallet balances': 'Upravljajte kreditima i stanjima novčanika',
+      'Credit Management is coming soon': 'Upravljanje kreditima uskoro',
       'Message': 'Poruka',
       'Name': 'Ime',
       'Name, email & phone number': 'Ime, e-mail i broj telefona',
@@ -3111,6 +3174,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Spravujte identitu svojho účtu a kontaktné údaje',
       'Management': 'Manažment',
+      'Credit Management': 'Správa kreditov',
+      'Manage credits and wallet balances': 'Spravujte kredity a zostatky peňaženky',
+      'Credit Management is coming soon': 'Správa kreditov už čoskoro',
       'Message': 'Správa',
       'Name': 'Meno',
       'Name, email & phone number': 'Meno, email a telefónne číslo',
@@ -3253,6 +3319,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Upravljajte identiteto svojega računa in kontaktne podatke',
       'Management': 'Upravljanje',
+      'Credit Management': 'Upravljanje kreditov',
+      'Manage credits and wallet balances': 'Upravljajte kredite in stanja denarnice',
+      'Credit Management is coming soon': 'Upravljanje kreditov kmalu',
       'Message': 'Sporočilo',
       'Name': 'Ime',
       'Name, email & phone number': 'Ime, e-pošta in telefonska številka',
@@ -3396,6 +3465,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Управљајте идентитетом свог налога и детаљима за контакт',
       'Management': 'Менаџмент',
+      'Credit Management': 'Управљање кредитима',
+      'Manage credits and wallet balances': 'Управљајте кредитима и стањем новчаника',
+      'Credit Management is coming soon': 'Управљање кредитима ускоро',
       'Message': 'Порука',
       'Name': 'Име',
       'Name, email & phone number': 'Име, имејл и број телефона',
@@ -3539,6 +3611,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Керуйте ідентифікацією свого облікового запису та контактними даними',
       'Management': 'управління',
+      'Credit Management': 'Керування кредитами',
+      'Manage credits and wallet balances': 'Керуйте кредитами та балансами гаманця',
+      'Credit Management is coming soon': 'Керування кредитами скоро',
       'Message': 'повідомлення',
       'Name': 'Ім\'я',
       'Name, email & phone number':
@@ -3685,6 +3760,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Управляйте идентификацией своей учетной записи и контактными данными',
       'Management': 'Управление',
+      'Credit Management': 'Управление кредитами',
+      'Manage credits and wallet balances': 'Управляйте кредитами и балансами кошелька',
+      'Credit Management is coming soon': 'Управление кредитами скоро',
       'Message': 'Сообщение',
       'Name': 'Имя',
       'Name, email & phone number':
@@ -3833,6 +3911,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Tvarkykite savo paskyros tapatybę ir kontaktinę informaciją',
       'Management': 'Valdymas',
+      'Credit Management': 'Kreditų valdymas',
+      'Manage credits and wallet balances': 'Valdykite kreditus ir piniginės likučius',
+      'Credit Management is coming soon': 'Kreditų valdymas netrukus',
       'Message': 'Pranešimas',
       'Name': 'Vardas',
       'Name, email & phone number': 'Vardas, el.paštas ir telefono numeris',
@@ -3978,6 +4059,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Pārvaldiet sava konta identitāti un kontaktinformāciju',
       'Management': 'Vadība',
+      'Credit Management': 'Kredītu pārvaldība',
+      'Manage credits and wallet balances': 'Pārvaldiet kredītus un maku atlikumus',
+      'Credit Management is coming soon': 'Kredītu pārvaldība drīzumā',
       'Message': 'Ziņa',
       'Name': 'Vārds',
       'Name, email & phone number': 'Vārds, e-pasts un tālruņa numurs',
@@ -4123,6 +4207,9 @@ class AppLocalizations {
       'Manage your account identity and contact details':
           'Hallake oma konto identiteeti ja kontaktandmeid',
       'Management': 'Juhtimine',
+      'Credit Management': 'Krediitide haldus',
+      'Manage credits and wallet balances': 'Halda krediite ja rahakoti jääke',
+      'Credit Management is coming soon': 'Krediitide haldus peagi',
       'Message': 'Sõnum',
       'Name': 'Nimi',
       'Name, email & phone number': 'Nimi, email ja telefoninumber',

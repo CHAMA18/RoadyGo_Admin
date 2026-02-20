@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:roadygo_admin/models/driver_model.dart';
 import 'package:roadygo_admin/models/region_model.dart';
 import 'package:roadygo_admin/pages/admin_registration_page.dart';
@@ -9,11 +10,32 @@ import 'package:roadygo_admin/pages/edit_rates_page.dart';
 import 'package:roadygo_admin/pages/edit_region_page.dart';
 import 'package:roadygo_admin/pages/personal_information_page.dart';
 import 'package:roadygo_admin/pages/security_page.dart';
+import 'package:roadygo_admin/pages/credit_management_page.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
+  static const Set<String> _publicRoutes = {
+    AppRoutes.home,
+    AppRoutes.login,
+  };
+
   static final GoRouter router = GoRouter(
     initialLocation: AppRoutes.home,
+    redirect: (context, state) {
+      final isSignedIn = FirebaseAuth.instance.currentUser != null;
+      final currentPath = state.uri.path;
+      final isPublic = _publicRoutes.contains(currentPath);
+
+      if (!isSignedIn && !isPublic) {
+        return AppRoutes.login;
+      }
+
+      if (isSignedIn && isPublic) {
+        return AppRoutes.dashboard;
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: AppRoutes.home,
@@ -64,7 +86,8 @@ class AppRouter {
         path: AppRoutes.editRegion,
         name: 'editRegion',
         pageBuilder: (context, state) {
-          final region = state.extra as RegionModel?;
+          final extra = state.extra;
+          final region = extra is RegionModel ? extra : null;
           return NoTransitionPage(
             child: EditRegionPage(region: region),
           );
@@ -84,6 +107,13 @@ class AppRouter {
           child: SecurityPage(),
         ),
       ),
+      GoRoute(
+        path: AppRoutes.creditManagement,
+        name: 'creditManagement',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: CreditManagementPage(),
+        ),
+      ),
     ],
   );
 }
@@ -98,4 +128,5 @@ class AppRoutes {
   static const String editRegion = '/edit-region';
   static const String personalInformation = '/personal-information';
   static const String security = '/security';
+  static const String creditManagement = '/credit-management';
 }

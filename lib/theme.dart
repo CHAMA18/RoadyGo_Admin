@@ -148,6 +148,7 @@ class FontSizes {
 
 ThemeData get lightTheme => ThemeData(
   useMaterial3: true,
+  fontFamily: _fontFamily,
   colorScheme: ColorScheme.light(
     primary: LightModeColors.lightPrimary,
     onPrimary: LightModeColors.lightOnPrimary,
@@ -263,6 +264,7 @@ ThemeData get lightTheme => ThemeData(
 
 ThemeData get darkTheme => ThemeData(
   useMaterial3: true,
+  fontFamily: _fontFamily,
   colorScheme: ColorScheme.dark(
     primary: DarkModeColors.darkPrimary,
     onPrimary: DarkModeColors.darkOnPrimary,

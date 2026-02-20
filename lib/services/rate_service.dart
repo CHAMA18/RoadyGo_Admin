@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:roadygo_admin/models/rate_model.dart';
 
 /// Service for managing rate data in Firestore
 class RateService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   static const String _collection = 'rates';
 
   List<RateModel> _rates = [];
@@ -15,8 +17,19 @@ class RateService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  bool _requireAuthOrSetError() {
+    if (_auth.currentUser != null) return true;
+    _error = 'You must be signed in before loading rates.';
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
   /// Stream of all rates
   Stream<List<RateModel>> getRatesStream() {
+    if (_auth.currentUser == null) {
+      return Stream<List<RateModel>>.value(const <RateModel>[]);
+    }
     return _firestore
         .collection(_collection)
         .orderBy('fleetClass')
@@ -32,6 +45,8 @@ class RateService extends ChangeNotifier {
     _error = null;
     notifyListeners();
 
+    if (!_requireAuthOrSetError()) return;
+
     try {
       final snapshot = await _firestore
           .collection(_collection)
@@ -43,7 +58,10 @@ class RateService extends ChangeNotifier {
           .toList();
     } catch (e) {
       debugPrint('Error fetching rates: $e');
-      _error = 'Failed to load rates';
+      final message = e.toString().contains('permission-denied')
+          ? 'Missing Firestore permissions. Sign in first, then deploy firestore.rules if needed.'
+          : 'Failed to load rates';
+      _error = message;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -52,6 +70,7 @@ class RateService extends ChangeNotifier {
 
   /// Get a single rate by ID
   Future<RateModel?> getRateById(String id) async {
+    if (_auth.currentUser == null) return null;
     try {
       final doc = await _firestore.collection(_collection).doc(id).get();
       if (doc.exists) {
@@ -65,6 +84,7 @@ class RateService extends ChangeNotifier {
 
   /// Get rate by fleet class
   Future<RateModel?> getRateByFleetClass(String fleetClass) async {
+    if (_auth.currentUser == null) return null;
     try {
       final snapshot = await _firestore
           .collection(_collection)
@@ -83,6 +103,7 @@ class RateService extends ChangeNotifier {
 
   /// Create a new rate
   Future<String?> createRate(RateModel rate) async {
+    if (_auth.currentUser == null) return null;
     try {
       final docRef = await _firestore.collection(_collection).add(rate.toJson());
       await fetchRates();
@@ -97,6 +118,7 @@ class RateService extends ChangeNotifier {
 
   /// Update an existing rate
   Future<bool> updateRate(RateModel rate) async {
+    if (_auth.currentUser == null) return false;
     try {
       await _firestore.collection(_collection).doc(rate.id).update(rate.toJson());
       await fetchRates();
@@ -111,6 +133,7 @@ class RateService extends ChangeNotifier {
 
   /// Delete a rate
   Future<bool> deleteRate(String id) async {
+    if (_auth.currentUser == null) return false;
     try {
       await _firestore.collection(_collection).doc(id).delete();
       await fetchRates();

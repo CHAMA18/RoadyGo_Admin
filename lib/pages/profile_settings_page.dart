@@ -12,6 +12,10 @@ import 'package:roadygo_admin/theme.dart';
 import 'package:roadygo_admin/nav.dart';
 
 const String _fontFamily = 'Satoshi';
+const List<Color> _settingsIconGradient = [
+  AppColors.primary,
+  AppColors.secondary,
+];
 
 /// Profile Settings Page for RoadyGo Admin - World-Class Design
 class ProfileSettingsPage extends StatefulWidget {
@@ -87,10 +91,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage>
                             icon: Icons.person_outline_rounded,
                             title: context.tr('Personal Information'),
                             subtitle: context.tr('Name, email & phone number'),
-                            gradientColors: const [
-                              Color(0xFF667EEA),
-                              Color(0xFF764BA2)
-                            ],
+                            gradientColors: _settingsIconGradient,
                             onTap: () =>
                                 context.pushNamed('personalInformation'),
                           ),
@@ -98,10 +99,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage>
                             icon: Icons.security_rounded,
                             title: context.tr('Security'),
                             subtitle: context.tr('Password & authentication'),
-                            gradientColors: const [
-                              Color(0xFF11998E),
-                              Color(0xFF38EF7D)
-                            ],
+                            gradientColors: _settingsIconGradient,
                             onTap: () => context.pushNamed('security'),
                           ),
                         ],
@@ -118,10 +116,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage>
                             icon: Icons.palette_outlined,
                             title: context.tr('App Theme'),
                             subtitle: context.tr('Appearance & display'),
-                            gradientColors: const [
-                              Color(0xFFF093FB),
-                              Color(0xFFF5576C)
-                            ],
+                            gradientColors: _settingsIconGradient,
                             isExpandable: true,
                             expandableType: 'theme',
                             onTap: () {},
@@ -130,10 +125,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage>
                             icon: Icons.language_rounded,
                             title: context.tr('Language'),
                             subtitle: context.tr('App language'),
-                            gradientColors: const [
-                              Color(0xFF667EEA),
-                              Color(0xFF764BA2)
-                            ],
+                            gradientColors: _settingsIconGradient,
                             isExpandable: true,
                             expandableType: 'language',
                             onTap: () {},
@@ -153,21 +145,24 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage>
                             title: context.tr('Edit Rates'),
                             subtitle:
                                 context.tr('Pricing & fare configuration'),
-                            gradientColors: const [
-                              Color(0xFFFDA085),
-                              Color(0xFFF6D365)
-                            ],
+                            gradientColors: _settingsIconGradient,
                             onTap: () => context.push(AppRoutes.editRates),
                           ),
                           _SettingItemData(
                             icon: Icons.rule_rounded,
-                            title: context.tr('Edit Rules'),
+                            title: context.tr('Edit Region'),
                             subtitle: context.tr('Service regions & policies'),
-                            gradientColors: const [
-                              Color(0xFF4FACFE),
-                              Color(0xFF00F2FE)
-                            ],
+                            gradientColors: _settingsIconGradient,
                             onTap: () => context.push(AppRoutes.editRegion),
+                          ),
+                          _SettingItemData(
+                            icon: Icons.account_balance_wallet_rounded,
+                            title: context.tr('Credit Management'),
+                            subtitle:
+                                context.tr('Manage credits and wallet balances'),
+                            gradientColors: _settingsIconGradient,
+                            onTap: () =>
+                                context.push(AppRoutes.creditManagement),
                           ),
                         ],
                       ),

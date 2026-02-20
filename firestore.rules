@@ -1,47 +1,66 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
     
-    // Users collection - admins can read/write their own data
+    // Users collection - users can manage their own doc; admins can read/update all users.
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow create: if isOwner(userId);
+      allow read, update, delete: if isOwner(userId) || isAdmin();
     }
     
     // Drivers collection - authenticated admins can read/write
     match /drivers/{driverId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
     
     // Rides collection - authenticated admins can read/write
     match /rides/{rideId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Ride dispatch requests - used when assigning/dispatching rides.
+    match /ride_dispatch_requests/{requestId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
     
     // Regions collection - authenticated admins can read/write
     match /regions/{regionId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
     
     // Schedules collection - authenticated admins can read/write
     match /schedules/{scheduleId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
     
     // Activities collection - authenticated admins can read/write
     match /activities/{activityId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
     
     // Rates collection - authenticated admins can read/write
     match /rates/{rateId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
   }
 }
